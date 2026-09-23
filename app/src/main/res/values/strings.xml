@@ -154,4 +154,143 @@
     <string name="trip_notification_stop">Стоп</string>
     <string name="trip_channel_name">Запись поездки</string>
     <string name="trip_channel_desc">Уведомление о фоновой записи маршрута</string>
+
+    <!-- ====================== Профиль автомобиля ====================== -->
+    <string name="profile_section_vin">Идентификация по VIN</string>
+    <string name="profile_vin_label">VIN</string>
+    <string name="profile_vin_placeholder">17 символов</string>
+    <string name="profile_vin_clear">Очистить VIN</string>
+    <string name="profile_vin_manufacturer">Производитель</string>
+    <string name="profile_vin_country">Страна</string>
+    <string name="profile_vin_year">Модельный год</string>
+    <string name="profile_vin_region">Регион</string>
+    <string name="profile_vin_model">Модель</string>
+    <string name="profile_vin_apply">Применить</string>
+
+    <string name="vin_error_empty">VIN не введён</string>
+    <string name="vin_error_length">VIN должен содержать ровно 17 символов</string>
+    <string name="vin_error_chars">VIN содержит недопустимые символы (I, O, Q запрещены)</string>
+
+    <string name="profile_section_manual">Параметры автомобиля</string>
+    <string name="profile_make_label">Марка</string>
+    <string name="profile_model_label">Модель</string>
+    <string name="profile_year_label">Год выпуска</string>
+
+    <string name="profile_section_region">Регион</string>
+    <string name="profile_region_hint">Влияет на подбор набора PID и протокола ЭБУ. Не влияет на систему единиц.</string>
+    <string name="region_us">США</string>
+    <string name="region_eu">Европа</string>
+    <string name="region_asia">Азия</string>
+    <string name="region_ru">Россия / СНГ</string>
+    <string name="region_other">Другое</string>
+    <string name="region_unknown">Не определён</string>
+
+    <string name="profile_section_units">Система единиц</string>
+    <string name="profile_units_effective">Текущая: %1$s</string>
+    <string name="units_auto">Как в регионе</string>
+    <string name="units_metric">Метрическая (км/ч, °C, бар)</string>
+    <string name="units_imperial">Имперская (миль/ч, °F, psi)</string>
+
+    <string name="profile_clear_button">Забыть автомобиль</string>
+    <string name="profile_cleared">Профиль автомобиля очищен</string>
+    <string name="error_profile_save_failed">Не удалось сохранить профиль. Проверьте свободное место на устройстве.</string>
+
+    <!-- ====================== Единицы измерения (базовые, метрические) ====================== -->
+    <string name="unit_none"></string>
+    <string name="unit_kpa">кПа</string>
+    <string name="unit_grams_per_sec">г/с</string>
+    <string name="unit_degree">°</string>
+    <string name="unit_volt">В</string>
+    <string name="unit_km">км</string>
+    <string name="unit_pa">Па</string>
+    <string name="unit_second">с</string>
+    <string name="unit_minute">мин</string>
+
+    <!-- Имперские единицы (для режима Imperial) -->
+    <string name="unit_fahrenheit">°F</string>
+    <string name="unit_psi">psi</string>
+    <string name="unit_miles">миль</string>
+    <string name="unit_pounds_per_min">фунт/мин</string>
+    <string name="unit_speed_mph">миль/ч</string>
+
+    <!-- ====================== Категории PID ====================== -->
+    <string name="category_engine">Двигатель</string>
+    <string name="category_fuel">Топливо</string>
+    <string name="category_air">Воздух</string>
+    <string name="category_o2">Датчики O₂</string>
+    <string name="category_emissions">Экология</string>
+    <string name="category_electrical">Электрика</string>
+    <string name="category_other">Прочее</string>
+
+    <!-- ====================== Названия PID ====================== -->
+    <string name="pid_0103_label">Топливная система</string>
+    <string name="pid_0104_label">Нагрузка на двигатель</string>
+    <string name="pid_0105_label">Температура ОЖ</string>
+    <string name="pid_0106_label">Краткосрочная коррекция (банк 1)</string>
+    <string name="pid_0107_label">Долгосрочная коррекция (банк 1)</string>
+    <string name="pid_0108_label">Краткосрочная коррекция (банк 2)</string>
+    <string name="pid_0109_label">Долгосрочная коррекция (банк 2)</string>
+    <string name="pid_010a_label">Давление топлива</string>
+    <string name="pid_0122_label">Давление в рампе (отн.)</string>
+    <string name="pid_0123_label">Давление в рампе (абс.)</string>
+    <string name="pid_012f_label">Уровень топлива</string>
+    <string name="pid_010b_label">Давление во впуске (MAP)</string>
+    <string name="pid_010f_label">Температура впуска (IAT)</string>
+    <string name="pid_0110_label">Расход воздуха (MAF)</string>
+    <string name="pid_0111_label">Положение дросселя</string>
+    <string name="pid_0133_label">Барометрическое давление</string>
+    <string name="pid_0146_label">Температура воздуха</string>
+    <string name="pid_0145_label">Относительное положение дросселя</string>
+    <string name="pid_0147_label">Положение дросселя B</string>
+    <string name="pid_0148_label">Положение дросселя C</string>
+    <string name="pid_0149_label">Педаль акселератора D</string>
+    <string name="pid_014a_label">Педаль акселератора E</string>
+    <string name="pid_014b_label">Педаль акселератора F</string>
+    <string name="pid_010c_label">Обороты двигателя</string>
+    <string name="pid_010d_label">Скорость автомобиля</string>
+    <string name="pid_010e_label">Опережение зажигания</string>
+    <string name="pid_0114_label">O2 B1S1 напряжение</string>
+    <string name="pid_0115_label">O2 B1S2 напряжение</string>
+    <string name="pid_0116_label">O2 B1S3 напряжение</string>
+    <string name="pid_0117_label">O2 B1S4 напряжение</string>
+    <string name="pid_0118_label">O2 B2S1 напряжение</string>
+    <string name="pid_0119_label">O2 B2S2 напряжение</string>
+    <string name="pid_012c_label">Команда EGR</string>
+    <string name="pid_012d_label">Ошибка EGR</string>
+    <string name="pid_012e_label">Продувка адсорбера EVAP</string>
+    <string name="pid_0130_label">Прогревов с последнего сброса</string>
+    <string name="pid_0131_label">Пробег после сброса кодов</string>
+    <string name="pid_0132_label">Давление паров EVAP</string>
+    <string name="pid_013c_label">Катализатор B1S1</string>
+    <string name="pid_013d_label">Катализатор B1S2</string>
+    <string name="pid_013e_label">Катализатор B2S1</string>
+    <string name="pid_013f_label">Катализатор B2S2</string>
+    <string name="pid_0142_label">Напряжение бортовой сети</string>
+    <string name="pid_011f_label">Время работы с запуска</string>
+    <string name="pid_0121_label">Пробег с MIL</string>
+    <string name="pid_014d_label">Время с MIL</string>
+    <string name="pid_014e_label">Время с последнего сброса</string>
+
+    <!-- ====================== Экран «Свои датчики» ====================== -->
+    <string name="custom_dashboard_title">Свои датчики</string>
+    <string name="custom_dashboard_subtitle">Выберите параметры, которые хотите видеть</string>
+    <string name="custom_dashboard_select_pids">Выбрать датчики</string>
+    <string name="custom_dashboard_no_pids">Датчики не выбраны</string>
+    <string name="custom_dashboard_no_pids_hint">Нажмите на карандаш вверху, чтобы выбрать параметры</string>
+    <string name="custom_dashboard_picker_title">Выбор датчиков</string>
+    <string name="custom_dashboard_save">Сохранить</string>
+    <string name="custom_dashboard_cancel">Отмена</string>
+
+    <!-- ====================== Настройки: топливо ====================== -->
+    <string name="settings_fuel_section">Топливо</string>
+    <string name="settings_displacement">Литраж двигателя</string>
+    <string name="settings_ve">Объёмный КПД (0.70–1.00)</string>
+    <string name="settings_fuel_type">Тип топлива</string>
+    <string name="settings_fuel_price">Цена за литр</string>
+    <string name="settings_odometer">Текущий одометр, км</string>
+    <string name="fuel_type_gasoline">Бензин</string>
+    <string name="fuel_type_diesel">Дизель</string>
+    <string name="fuel_type_lpg">Газ (LPG)</string>
+    <string name="fuel_type_cng">Метан (CNG)</string>
+    <string name="fuel_type_e85">Этанол E85</string>
 </resources>

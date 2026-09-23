@@ -154,4 +154,134 @@
     <string name="trip_notification_stop">Stop</string>
     <string name="trip_channel_name">Trip recording</string>
     <string name="trip_channel_desc">Notification about background route recording</string>
+
+    <string name="profile_section_vin">VIN Identification</string>
+    <string name="profile_vin_label">VIN</string>
+    <string name="profile_vin_placeholder">17 characters</string>
+    <string name="profile_vin_clear">Clear VIN</string>
+    <string name="profile_vin_manufacturer">Manufacturer</string>
+    <string name="profile_vin_country">Country</string>
+    <string name="profile_vin_year">Model year</string>
+    <string name="profile_vin_region">Region</string>
+    <string name="profile_vin_model">Model</string>
+    <string name="profile_vin_apply">Apply</string>
+
+    <string name="vin_error_empty">VIN is empty</string>
+    <string name="vin_error_length">VIN must be exactly 17 characters</string>
+    <string name="vin_error_chars">VIN contains illegal characters (I, O, Q are forbidden)</string>
+
+    <string name="profile_section_manual">Vehicle parameters</string>
+    <string name="profile_make_label">Make</string>
+    <string name="profile_model_label">Model</string>
+    <string name="profile_year_label">Year</string>
+
+    <string name="profile_section_region">Region</string>
+    <string name="profile_region_hint">Affects PID and ECU protocol selection. Does not affect the unit system.</string>
+    <string name="region_us">USA</string>
+    <string name="region_eu">Europe</string>
+    <string name="region_asia">Asia</string>
+    <string name="region_ru">Russia / CIS</string>
+    <string name="region_other">Other</string>
+    <string name="region_unknown">Unknown</string>
+
+    <string name="profile_section_units">Unit system</string>
+    <string name="profile_units_effective">Current: %1$s</string>
+    <string name="units_auto">Follow region</string>
+    <string name="units_metric">Metric (km/h, °C, bar)</string>
+    <string name="units_imperial">Imperial (mph, °F, psi)</string>
+
+    <string name="profile_clear_button">Forget vehicle</string>
+    <string name="profile_cleared">Vehicle profile cleared</string>
+    <string name="error_profile_save_failed">Failed to save profile. Check available storage space.</string>
+
+    <!-- ====================== Units ====================== -->
+    <string name="unit_none"></string>
+    <string name="unit_kpa">kPa</string>
+    <string name="unit_grams_per_sec">g/s</string>
+    <string name="unit_kmh">km/h</string>
+    <string name="unit_degree">°</string>
+    <string name="unit_volt">V</string>
+    <string name="unit_km">km</string>
+    <string name="unit_pa">Pa</string>
+    <string name="unit_second">s</string>
+    <string name="unit_minute">min</string>
+
+    <!-- ====================== Categories ====================== -->
+    <string name="category_engine">Engine</string>
+    <string name="category_fuel">Fuel</string>
+    <string name="category_air">Air</string>
+    <string name="category_o2">O₂ sensors</string>
+    <string name="category_emissions">Emissions</string>
+    <string name="category_electrical">Electrical</string>
+    <string name="category_other">Other</string>
+
+    <!-- ====================== PID labels ====================== -->
+    <string name="pid_0103_label">Fuel system status</string>
+    <string name="pid_0104_label">Calculated engine load</string>
+    <string name="pid_0105_label">Coolant temperature</string>
+    <string name="pid_0106_label">Short term fuel trim (bank 1)</string>
+    <string name="pid_0107_label">Long term fuel trim (bank 1)</string>
+    <string name="pid_0108_label">Short term fuel trim (bank 2)</string>
+    <string name="pid_0109_label">Long term fuel trim (bank 2)</string>
+    <string name="pid_010a_label">Fuel pressure</string>
+    <string name="pid_0122_label">Fuel rail pressure (rel.)</string>
+    <string name="pid_0123_label">Fuel rail pressure (abs.)</string>
+    <string name="pid_012f_label">Fuel level</string>
+    <string name="pid_010b_label">Intake manifold pressure</string>
+    <string name="pid_010f_label">Intake air temperature</string>
+    <string name="pid_0110_label">Mass air flow</string>
+    <string name="pid_0111_label">Throttle position</string>
+    <string name="pid_0133_label">Barometric pressure</string>
+    <string name="pid_0146_label">Ambient air temperature</string>
+    <string name="pid_0145_label">Relative throttle position</string>
+    <string name="pid_0147_label">Absolute throttle position B</string>
+    <string name="pid_0148_label">Absolute throttle position C</string>
+    <string name="pid_0149_label">Accelerator pedal position D</string>
+    <string name="pid_014a_label">Accelerator pedal position E</string>
+    <string name="pid_014b_label">Accelerator pedal position F</string>
+    <string name="pid_010c_label">Engine RPM</string>
+    <string name="pid_010d_label">Vehicle speed</string>
+    <string name="pid_010e_label">Timing advance</string>
+    <string name="pid_0114_label">O2 B1S1 voltage</string>
+    <string name="pid_0115_label">O2 B1S2 voltage</string>
+    <string name="pid_0116_label">O2 B1S3 voltage</string>
+    <string name="pid_0117_label">O2 B1S4 voltage</string>
+    <string name="pid_0118_label">O2 B2S1 voltage</string>
+    <string name="pid_0119_label">O2 B2S2 voltage</string>
+    <string name="pid_012c_label">Commanded EGR</string>
+    <string name="pid_012d_label">EGR error</string>
+    <string name="pid_012e_label">Commanded evaporative purge</string>
+    <string name="pid_0130_label">Warm-ups since codes cleared</string>
+    <string name="pid_0131_label">Distance since codes cleared</string>
+    <string name="pid_0132_label">Evap system vapor pressure</string>
+    <string name="pid_013c_label">Catalyst temperature B1S1</string>
+    <string name="pid_013d_label">Catalyst temperature B1S2</string>
+    <string name="pid_013e_label">Catalyst temperature B2S1</string>
+    <string name="pid_013f_label">Catalyst temperature B2S2</string>
+    <string name="pid_0142_label">Control module voltage</string>
+    <string name="pid_011f_label">Run time since engine start</string>
+    <string name="pid_0121_label">Distance traveled with MIL on</string>
+    <string name="pid_014d_label">Time run with MIL on</string>
+    <string name="pid_014e_label">Time since codes cleared</string>
+
+    <string name="custom_dashboard_title">Custom gauges</string>
+    <string name="custom_dashboard_subtitle">Choose the parameters you want to see</string>
+    <string name="custom_dashboard_select_pids">Select gauges</string>
+    <string name="custom_dashboard_no_pids">No gauges selected</string>
+    <string name="custom_dashboard_no_pids_hint">Tap the pencil at the top to choose parameters</string>
+    <string name="custom_dashboard_picker_title">Select gauges</string>
+    <string name="custom_dashboard_save">Save</string>
+    <string name="custom_dashboard_cancel">Cancel</string>
+
+    <string name="settings_fuel_section">Fuel</string>
+    <string name="settings_displacement">Engine displacement</string>
+    <string name="settings_ve">Volumetric efficiency (0.70–1.00)</string>
+    <string name="settings_fuel_type">Fuel type</string>
+    <string name="settings_fuel_price">Price per liter</string>
+    <string name="settings_odometer">Current odometer, km</string>
+    <string name="fuel_type_gasoline">Gasoline</string>
+    <string name="fuel_type_diesel">Diesel</string>
+    <string name="fuel_type_lpg">LPG</string>
+    <string name="fuel_type_cng">CNG</string>
+    <string name="fuel_type_e85">E85</string>
 </resources>

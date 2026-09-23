@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profile_section_vin">VIN-Identifikation</string>
+    <string name="profile_vin_label">FIN</string>
+    <string name="profile_vin_placeholder">17 Zeichen</string>
+    <string name="profile_vin_clear">FIN löschen</string>
+    <string name="profile_vin_manufacturer">Hersteller</string>
+    <string name="profile_vin_country">Land</string>
+    <string name="profile_vin_year">Modelljahr</string>
+    <string name="profile_vin_region">Region</string>
+    <string name="profile_vin_model">Modell</string>
+    <string name="profile_vin_apply">Übernehmen</string>
+
+    <string name="vin_error_empty">FIN ist leer</string>
+    <string name="vin_error_length">FIN muss genau 17 Zeichen lang sein</string>
+    <string name="vin_error_chars">FIN enthält ungültige Zeichen (I, O, Q sind verboten)</string>
+
+    <string name="profile_section_manual">Fahrzeugparameter</string>
+    <string name="profile_make_label">Marke</string>
+    <string name="profile_model_label">Modell</string>
+    <string name="profile_year_label">Baujahr</string>
+
+    <string name="profile_section_region">Region</string>
+    <string name="profile_region_hint">Beeinflusst die Auswahl der PID- und ECU-Protokolle. Hat keinen Einfluss auf das Einheitensystem.</string>
+    <string name="region_us">USA</string>
+    <string name="region_eu">Europa</string>
+    <string name="region_asia">Asien</string>
+    <string name="region_ru">Russland / GUS</string>
+    <string name="region_other">Andere</string>
+    <string name="region_unknown">Unbekannt</string>
+
+    <string name="profile_section_units">Einheitensystem</string>
+    <string name="profile_units_effective">Aktuell: %1$s</string>
+    <string name="units_auto">Wie Region</string>
+    <string name="units_metric">Metrisch (km/h, °C, bar)</string>
+    <string name="units_imperial">Imperial (mph, °F, psi)</string>
+
+    <string name="profile_clear_button">Fahrzeug vergessen</string>
+    <string name="profile_cleared">Fahrzeugprofil gelöscht</string>
+    <string name="error_profile_save_failed">Profil konnte nicht gespeichert werden. Speicherplatz prüfen.</string>
+
+    <!-- ====================== Einheiten ====================== -->
+    <string name="unit_none"></string>
+    <string name="unit_percent">%</string>
+    <string name="unit_celsius">°C</string>
+    <string name="unit_kpa">kPa</string>
+    <string name="unit_grams_per_sec">g/s</string>
+    <string name="unit_rpm">U/min</string>
+    <string name="unit_kmh">km/h</string>
+    <string name="unit_degree">°</string>
+    <string name="unit_volt">V</string>
+    <string name="unit_km">km</string>
+    <string name="unit_pa">Pa</string>
+    <string name="unit_second">s</string>
+    <string name="unit_minute">min</string>
+
+    <!-- ====================== Kategorien ====================== -->
+    <string name="category_engine">Motor</string>
+    <string name="category_fuel">Kraftstoff</string>
+    <string name="category_air">Luft</string>
+    <string name="category_o2">O₂-Sensoren</string>
+    <string name="category_emissions">Abgas</string>
+    <string name="category_electrical">Elektrik</string>
+    <string name="category_other">Sonstiges</string>
+
+    <!-- ====================== PID-Namen ====================== -->
+    <string name="pid_0103_label">Kraftstoffsystemstatus</string>
+    <string name="pid_0104_label">Berechnete Motorlast</string>
+    <string name="pid_0105_label">Kühlmitteltemperatur</string>
+    <string name="pid_0106_label">Kurzzeitige Kraftstoffkorrektur (Bank 1)</string>
+    <string name="pid_0107_label">Langzeitige Kraftstoffkorrektur (Bank 1)</string>
+    <string name="pid_0108_label">Kurzzeitige Kraftstoffkorrektur (Bank 2)</string>
+    <string name="pid_0109_label">Langzeitige Kraftstoffkorrektur (Bank 2)</string>
+    <string name="pid_010a_label">Kraftstoffdruck</string>
+    <string name="pid_0122_label">Kraftstoffverteilerdruck (rel.)</string>
+    <string name="pid_0123_label">Kraftstoffverteilerdruck (abs.)</string>
+    <string name="pid_012f_label">Kraftstoffstand</string>
+    <string name="pid_010b_label">Saugrohrdruck (MAP)</string>
+    <string name="pid_010f_label">Ansauglufttemperatur (IAT)</string>
+    <string name="pid_0110_label">Luftmassenstrom (MAF)</string>
+    <string name="pid_0111_label">Drosselklappenstellung</string>
+    <string name="pid_0133_label">Barometrischer Druck</string>
+    <string name="pid_0146_label">Umgebungslufttemperatur</string>
+    <string name="pid_0145_label">Relative Drosselklappenstellung</string>
+    <string name="pid_0147_label">Absolute Drosselklappenstellung B</string>
+    <string name="pid_0148_label">Absolute Drosselklappenstellung C</string>
+    <string name="pid_0149_label">Gaspedalstellung D</string>
+    <string name="pid_014a_label">Gaspedalstellung E</string>
+    <string name="pid_014b_label">Gaspedalstellung F</string>
+    <string name="pid_010c_label">Motordrehzahl</string>
+    <string name="pid_010d_label">Fahrzeuggeschwindigkeit</string>
+    <string name="pid_010e_label">Zündzeitpunktverstellung</string>
+    <string name="pid_0114_label">O2 B1S1 Spannung</string>
+    <string name="pid_0115_label">O2 B1S2 Spannung</string>
+    <string name="pid_0116_label">O2 B1S3 Spannung</string>
+    <string name="pid_0117_label">O2 B1S4 Spannung</string>
+    <string name="pid_0118_label">O2 B2S1 Spannung</string>
+    <string name="pid_0119_label">O2 B2S2 Spannung</string>
+    <string name="pid_012c_label">Befehl AGR</string>
+    <string name="pid_012d_label">AGR-Fehler</string>
+    <string name="pid_012e_label">Befehl Evaporationsspülung</string>
+    <string name="pid_0130_label">Warmlaufphasen seit Fehlerspeicherlöschung</string>
+    <string name="pid_0131_label">Strecke seit Fehlerspeicherlöschung</string>
+    <string name="pid_0132_label">Kraftstoffverdunstungsdruck</string>
+    <string name="pid_013c_label">Katalysatortemperatur B1S1</string>
+    <string name="pid_013d_label">Katalysatortemperatur B1S2</string>
+    <string name="pid_013e_label">Katalysatortemperatur B2S1</string>
+    <string name="pid_013f_label">Katalysatortemperatur B2S2</string>
+    <string name="pid_0142_label">Steuergerätespannung</string>
+    <string name="pid_011f_label">Laufzeit seit Motorstart</string>
+    <string name="pid_0121_label">Strecke mit MIL an</string>
+    <string name="pid_014d_label">Zeit mit MIL an</string>
+    <string name="pid_014e_label">Zeit seit Fehlerspeicherlöschung</string>
+
+    <string name="custom_dashboard_title">Eigene Anzeigen</string>
+    <string name="custom_dashboard_subtitle">Wählen Sie die Parameter, die Sie sehen möchten</string>
+    <string name="custom_dashboard_select_pids">Anzeigen auswählen</string>
+    <string name="custom_dashboard_no_pids">Keine Anzeigen ausgewählt</string>
+    <string name="custom_dashboard_no_pids_hint">Tippen Sie oben auf den Stift, um Parameter auszuwählen</string>
+    <string name="custom_dashboard_picker_title">Anzeigen auswählen</string>
+    <string name="custom_dashboard_save">Speichern</string>
+    <string name="custom_dashboard_cancel">Abbrechen</string>
+
+    <string name="settings_fuel_section">Kraftstoff</string>
+    <string name="settings_displacement">Hubraum</string>
+    <string name="settings_ve">Volumetrischer Wirkungsgrad (0.70–1.00)</string>
+    <string name="settings_fuel_type">Kraftstofftyp</string>
+    <string name="settings_fuel_price">Preis pro Liter</string>
+    <string name="settings_odometer">Aktueller Kilometerstand, km</string>
+    <string name="fuel_type_gasoline">Benzin</string>
+    <string name="fuel_type_diesel">Diesel</string>
+    <string name="fuel_type_lpg">Autogas (LPG)</string>
+    <string name="fuel_type_cng">Erdgas (CNG)</string>
+    <string name="fuel_type_e85">Ethanol E85</string>
+</resources>

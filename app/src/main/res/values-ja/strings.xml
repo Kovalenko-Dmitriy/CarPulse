@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profile_section_vin">VINによる識別</string>
+    <string name="profile_vin_label">VIN</string>
+    <string name="profile_vin_placeholder">17文字</string>
+    <string name="profile_vin_clear">VINをクリア</string>
+    <string name="profile_vin_manufacturer">メーカー</string>
+    <string name="profile_vin_country">国</string>
+    <string name="profile_vin_year">モデルイヤー</string>
+    <string name="profile_vin_region">地域</string>
+    <string name="profile_vin_model">モデル</string>
+    <string name="profile_vin_apply">適用</string>
+
+    <string name="vin_error_empty">VINが入力されていません</string>
+    <string name="vin_error_length">VINは正確に17文字である必要があります</string>
+    <string name="vin_error_chars">VINに無効な文字が含まれています（I、O、Qは禁止）</string>
+
+    <string name="profile_section_manual">車両パラメータ</string>
+    <string name="profile_make_label">メーカー</string>
+    <string name="profile_model_label">モデル</string>
+    <string name="profile_year_label">年式</string>
+
+    <string name="profile_section_region">地域</string>
+    <string name="profile_region_hint">PIDとECUプロトコルの選択に影響します。単位系には影響しません。</string>
+    <string name="region_us">アメリカ</string>
+    <string name="region_eu">ヨーロッパ</string>
+    <string name="region_asia">アジア</string>
+    <string name="region_ru">ロシア / CIS</string>
+    <string name="region_other">その他</string>
+    <string name="region_unknown">不明</string>
+
+    <string name="profile_section_units">単位系</string>
+    <string name="profile_units_effective">現在: %1$s</string>
+    <string name="units_auto">地域に従う</string>
+    <string name="units_metric">メートル法 (km/h, °C, bar)</string>
+    <string name="units_imperial">ヤード・ポンド法 (mph, °F, psi)</string>
+
+    <string name="profile_clear_button">車両を忘れる</string>
+    <string name="profile_cleared">車両プロファイルを消去しました</string>
+    <string name="error_profile_save_failed">プロファイルを保存できませんでした。空き容量を確認してください。</string>
+
+    <!-- ====================== 単位 ====================== -->
+    <string name="unit_none"></string>
+    <string name="unit_percent">%</string>
+    <string name="unit_celsius">°C</string>
+    <string name="unit_kpa">kPa</string>
+    <string name="unit_grams_per_sec">g/s</string>
+    <string name="unit_rpm">rpm</string>
+    <string name="unit_kmh">km/h</string>
+    <string name="unit_degree">°</string>
+    <string name="unit_volt">V</string>
+    <string name="unit_km">km</string>
+    <string name="unit_pa">Pa</string>
+    <string name="unit_second">s</string>
+    <string name="unit_minute">min</string>
+
+    <!-- ====================== カテゴリ ====================== -->
+    <string name="category_engine">エンジン</string>
+    <string name="category_fuel">燃料</string>
+    <string name="category_air">空気</string>
+    <string name="category_o2">O₂センサー</string>
+    <string name="category_emissions">排出ガス</string>
+    <string name="category_electrical">電気系統</string>
+    <string name="category_other">その他</string>
+
+    <!-- ====================== PID名 ====================== -->
+    <string name="pid_0103_label">燃料システム状態</string>
+    <string name="pid_0104_label">計算負荷</string>
+    <string name="pid_0105_label">冷却水温度</string>
+    <string name="pid_0106_label">短期燃料補正 (バンク1)</string>
+    <string name="pid_0107_label">長期燃料補正 (バンク1)</string>
+    <string name="pid_0108_label">短期燃料補正 (バンク2)</string>
+    <string name="pid_0109_label">長期燃料補正 (バンク2)</string>
+    <string name="pid_010a_label">燃料圧力</string>
+    <string name="pid_0122_label">燃料レール圧 (相対)</string>
+    <string name="pid_0123_label">燃料レール圧 (絶対)</string>
+    <string name="pid_012f_label">燃料レベル</string>
+    <string name="pid_010b_label">吸気管圧力 (MAP)</string>
+    <string name="pid_010f_label">吸気温度 (IAT)</string>
+    <string name="pid_0110_label">吸入空気量 (MAF)</string>
+    <string name="pid_0111_label">スロットルポジション</string>
+    <string name="pid_0133_label">気圧</string>
+    <string name="pid_0146_label">外気温度</string>
+    <string name="pid_0145_label">相対スロットルポジション</string>
+    <string name="pid_0147_label">スロットルポジション B</string>
+    <string name="pid_0148_label">スロットルポジション C</string>
+    <string name="pid_0149_label">アクセルペダルポジション D</string>
+    <string name="pid_014a_label">アクセルペダルポジション E</string>
+    <string name="pid_014b_label">アクセルペダルポジション F</string>
+    <string name="pid_010c_label">エンジン回転数</string>
+    <string name="pid_010d_label">車速</string>
+    <string name="pid_010e_label">点火進角</string>
+    <string name="pid_0114_label">O2 B1S1 電圧</string>
+    <string name="pid_0115_label">O2 B1S2 電圧</string>
+    <string name="pid_0116_label">O2 B1S3 電圧</string>
+    <string name="pid_0117_label">O2 B1S4 電圧</string>
+    <string name="pid_0118_label">O2 B2S1 電圧</string>
+    <string name="pid_0119_label">O2 B2S2 電圧</string>
+    <string name="pid_012c_label">EGR指令値</string>
+    <string name="pid_012d_label">EGR誤差</string>
+    <string name="pid_012e_label">EVAPパージ指令値</string>
+    <string name="pid_0130_label">クリア後の暖機回数</string>
+    <string name="pid_0131_label">クリア後の走行距離</string>
+    <string name="pid_0132_label">EVAP蒸気圧</string>
+    <string name="pid_013c_label">触媒温度 B1S1</string>
+    <string name="pid_013d_label">触媒温度 B1S2</string>
+    <string name="pid_013e_label">触媒温度 B2S1</string>
+    <string name="pid_013f_label">触媒温度 B2S2</string>
+    <string name="pid_0142_label">コントロールモジュール電圧</string>
+    <string name="pid_011f_label">エンジン始動後の経過時間</string>
+    <string name="pid_0121_label">MIL点灯中の走行距離</string>
+    <string name="pid_014d_label">MIL点灯中の時間</string>
+    <string name="pid_014e_label">クリア後の経過時間</string>
+
+    <string name="custom_dashboard_title">カスタムゲージ</string>
+    <string name="custom_dashboard_subtitle">表示したいパラメータを選択してください</string>
+    <string name="custom_dashboard_select_pids">ゲージを選択</string>
+    <string name="custom_dashboard_no_pids">ゲージが選択されていません</string>
+    <string name="custom_dashboard_no_pids_hint">上部の鉛筆アイコンをタップしてパラメータを選択してください</string>
+    <string name="custom_dashboard_picker_title">ゲージの選択</string>
+    <string name="custom_dashboard_save">保存</string>
+    <string name="custom_dashboard_cancel">キャンセル</string>
+
+    <string name="settings_fuel_section">燃料</string>
+    <string name="settings_displacement">排気量</string>
+    <string name="settings_ve">体積効率 (0.70–1.00)</string>
+    <string name="settings_fuel_type">燃料タイプ</string>
+    <string name="settings_fuel_price">1リットルあたりの価格</string>
+    <string name="settings_odometer">現在の走行距離, km</string>
+    <string name="fuel_type_gasoline">ガソリン</string>
+    <string name="fuel_type_diesel">ディーゼル</string>
+    <string name="fuel_type_lpg">LPG</string>
+    <string name="fuel_type_cng">CNG</string>
+    <string name="fuel_type_e85">エタノール E85</string>
+</resources>

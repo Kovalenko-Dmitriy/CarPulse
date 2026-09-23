@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profile_section_vin">VIN 识别</string>
+    <string name="profile_vin_label">VIN</string>
+    <string name="profile_vin_placeholder">17 个字符</string>
+    <string name="profile_vin_clear">清除 VIN</string>
+    <string name="profile_vin_manufacturer">制造商</string>
+    <string name="profile_vin_country">国家</string>
+    <string name="profile_vin_year">车型年份</string>
+    <string name="profile_vin_region">地区</string>
+    <string name="profile_vin_model">车型</string>
+    <string name="profile_vin_apply">应用</string>
+
+    <string name="vin_error_empty">VIN 为空</string>
+    <string name="vin_error_length">VIN 必须正好为 17 个字符</string>
+    <string name="vin_error_chars">VIN 包含非法字符（禁止使用 I、O、Q）</string>
+
+    <string name="profile_section_manual">车辆参数</string>
+    <string name="profile_make_label">品牌</string>
+    <string name="profile_model_label">车型</string>
+    <string name="profile_year_label">年份</string>
+
+    <string name="profile_section_region">地区</string>
+    <string name="profile_region_hint">影响 PID 和 ECU 协议的选择。不影响单位系统。</string>
+    <string name="region_us">美国</string>
+    <string name="region_eu">欧洲</string>
+    <string name="region_asia">亚洲</string>
+    <string name="region_ru">俄罗斯 / 独联体</string>
+    <string name="region_other">其他</string>
+    <string name="region_unknown">未知</string>
+
+    <string name="profile_section_units">单位系统</string>
+    <string name="profile_units_effective">当前：%1$s</string>
+    <string name="units_auto">跟随地区</string>
+    <string name="units_metric">公制（km/h、°C、bar）</string>
+    <string name="units_imperial">英制（mph、°F、psi）</string>
+
+    <string name="profile_clear_button">忘记车辆</string>
+    <string name="profile_cleared">车辆配置文件已清除</string>
+    <string name="error_profile_save_failed">无法保存配置文件。请检查可用存储空间。</string>
+
+    <!-- ====================== 单位 ====================== -->
+    <string name="unit_none"></string>
+    <string name="unit_percent">%</string>
+    <string name="unit_celsius">°C</string>
+    <string name="unit_kpa">kPa</string>
+    <string name="unit_grams_per_sec">g/s</string>
+    <string name="unit_rpm">rpm</string>
+    <string name="unit_kmh">km/h</string>
+    <string name="unit_degree">°</string>
+    <string name="unit_volt">V</string>
+    <string name="unit_km">km</string>
+    <string name="unit_pa">Pa</string>
+    <string name="unit_second">s</string>
+    <string name="unit_minute">min</string>
+
+    <!-- ====================== 类别 ====================== -->
+    <string name="category_engine">发动机</string>
+    <string name="category_fuel">燃油</string>
+    <string name="category_air">进气</string>
+    <string name="category_o2">O₂ 传感器</string>
+    <string name="category_emissions">排放</string>
+    <string name="category_electrical">电气</string>
+    <string name="category_other">其他</string>
+
+    <!-- ====================== PID 名称 ====================== -->
+    <string name="pid_0103_label">燃油系统状态</string>
+    <string name="pid_0104_label">计算发动机负荷</string>
+    <string name="pid_0105_label">冷却液温度</string>
+    <string name="pid_0106_label">短期燃油修正 (第1组)</string>
+    <string name="pid_0107_label">长期燃油修正 (第1组)</string>
+    <string name="pid_0108_label">短期燃油修正 (第2组)</string>
+    <string name="pid_0109_label">长期燃油修正 (第2组)</string>
+    <string name="pid_010a_label">燃油压力</string>
+    <string name="pid_0122_label">燃油轨压力 (相对)</string>
+    <string name="pid_0123_label">燃油轨压力 (绝对)</string>
+    <string name="pid_012f_label">燃油液位</string>
+    <string name="pid_010b_label">进气歧管压力 (MAP)</string>
+    <string name="pid_010f_label">进气温度 (IAT)</string>
+    <string name="pid_0110_label">空气流量 (MAF)</string>
+    <string name="pid_0111_label">节气门位置</string>
+    <string name="pid_0133_label">大气压力</string>
+    <string name="pid_0146_label">环境温度</string>
+    <string name="pid_0145_label">相对节气门位置</string>
+    <string name="pid_0147_label">绝对节气门位置 B</string>
+    <string name="pid_0148_label">绝对节气门位置 C</string>
+    <string name="pid_0149_label">加速踏板位置 D</string>
+    <string name="pid_014a_label">加速踏板位置 E</string>
+    <string name="pid_014b_label">加速踏板位置 F</string>
+    <string name="pid_010c_label">发动机转速</string>
+    <string name="pid_010d_label">车速</string>
+    <string name="pid_010e_label">点火提前角</string>
+    <string name="pid_0114_label">O2 B1S1 电压</string>
+    <string name="pid_0115_label">O2 B1S2 电压</string>
+    <string name="pid_0116_label">O2 B1S3 电压</string>
+    <string name="pid_0117_label">O2 B1S4 电压</string>
+    <string name="pid_0118_label">O2 B2S1 电压</string>
+    <string name="pid_0119_label">O2 B2S2 电压</string>
+    <string name="pid_012c_label">EGR 指令</string>
+    <string name="pid_012d_label">EGR 误差</string>
+    <string name="pid_012e_label">EVAP 吹洗指令</string>
+    <string name="pid_0130_label">清除后暖机次数</string>
+    <string name="pid_0131_label">清除后行驶距离</string>
+    <string name="pid_0132_label">EVAP 蒸气压力</string>
+    <string name="pid_013c_label">催化器温度 B1S1</string>
+    <string name="pid_013d_label">催化器温度 B1S2</string>
+    <string name="pid_013e_label">催化器温度 B2S1</string>
+    <string name="pid_013f_label">催化器温度 B2S2</string>
+    <string name="pid_0142_label">控制模块电压</string>
+    <string name="pid_011f_label">发动机启动后运行时间</string>
+    <string name="pid_0121_label">MIL 点亮行驶距离</string>
+    <string name="pid_014d_label">MIL 点亮时间</string>
+    <string name="pid_014e_label">清除后时间</string>
+
+    <string name="custom_dashboard_title">自定义仪表</string>
+    <string name="custom_dashboard_subtitle">选择您想看到的参数</string>
+    <string name="custom_dashboard_select_pids">选择仪表</string>
+    <string name="custom_dashboard_no_pids">未选择仪表</string>
+    <string name="custom_dashboard_no_pids_hint">点击顶部的铅笔图标选择参数</string>
+    <string name="custom_dashboard_picker_title">选择仪表</string>
+    <string name="custom_dashboard_save">保存</string>
+    <string name="custom_dashboard_cancel">取消</string>
+
+    <string name="settings_fuel_section">燃油</string>
+    <string name="settings_displacement">发动机排量</string>
+    <string name="settings_ve">容积效率 (0.70–1.00)</string>
+    <string name="settings_fuel_type">燃油类型</string>
+    <string name="settings_fuel_price">每升价格</string>
+    <string name="settings_odometer">当前里程, km</string>
+    <string name="fuel_type_gasoline">汽油</string>
+    <string name="fuel_type_diesel">柴油</string>
+    <string name="fuel_type_lpg">LPG</string>
+    <string name="fuel_type_cng">CNG</string>
+    <string name="fuel_type_e85">乙醇 E85</string>
+</resources>

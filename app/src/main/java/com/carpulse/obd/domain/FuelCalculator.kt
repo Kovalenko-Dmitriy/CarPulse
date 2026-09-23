@@ -1,27 +1,27 @@
 package com.carpulse.obd.domain
 
+import androidx.annotation.StringRes
+import com.carpulse.obd.R
+
 /**
  * Расчёт мгновенного расхода топлива.
- *
  * Два метода:
- *   1. Через MAF (PID 0110) — точный, для машин с MAF-датчиком.
- *   2. Через MAP + RPM + IAT — оценочный, для машин без MAF (Honda Civic 2001).
+ * 1. Через MAF (PID 0110) — точный, для машин с MAF-датчиком.
+ * 2. Через MAP + RPM + IAT — оценочный, для машин без MAF (Honda Civic 2001).
  */
 object FuelCalculator {
-
     private const val DEFAULT_DISPLACEMENT_L = 1.6f
     private const val DEFAULT_VE = 0.85f
 
     /**
      * Мгновенный расход в литрах в час.
-     *
-     * @param maf          расход воздуха (г/с) — PID 0110, может быть null
-     * @param map          давление во впуске (кПа) — PID 010B
-     * @param rpm          обороты — PID 010C
-     * @param iat          температура впуска (°C) — PID 010F
+     * @param maf расход воздуха (г/с) — PID 0110, может быть null
+     * @param map давление во впуске (кПа) — PID 010B
+     * @param rpm обороты — PID 010C
+     * @param iat температура впуска (°C) — PID 010F
      * @param displacement литраж двигателя
-     * @param ve           объёмный КПД (0.7–1.0)
-     * @param fuelType     бензин / дизель
+     * @param ve объёмный КПД (0.7–1.0)
+     * @param fuelType бензин / дизель
      */
     fun calculateLph(
         maf: Float?,
@@ -36,12 +36,10 @@ object FuelCalculator {
         if (maf != null && maf > 0f) {
             return mafToLph(maf, fuelType)
         }
-
         // Метод 2: через MAP + RPM + IAT (без MAF)
         if (map != null && rpm != null && iat != null && rpm > 0f) {
             return speedDensityToLph(map, rpm, iat, displacement, ve, fuelType)
         }
-
         return null
     }
 
@@ -83,15 +81,22 @@ object FuelCalculator {
     }
 }
 
+/**
+ * Тип топлива. stoichAfr и densityGPerL — физические константы,
+ * labelRes — локализованное название (для UI).
+ *
+ * ВАЖНО: labelRes используется только для отображения. Для хранения
+ * в настройках и сравнения используется name (GASOLINE, DIESEL, ...) —
+ * это стабильный технический идентификатор, не зависящий от локали.
+ */
 enum class FuelType(
     val stoichAfr: Float,
     val densityGPerL: Float,
-    val labelRu: String,
-    val labelEn: String
+    @StringRes val labelRes: Int,
 ) {
-    GASOLINE(14.7f, 745f, "Бензин", "Gasoline"),
-    DIESEL(14.5f, 840f, "Дизель", "Diesel"),
-    LPG(15.7f, 510f, "Газ (LPG)", "LPG"),
-    CNG(17.2f, 128f, "Метан (CNG)", "CNG"),
-    E85(9.8f, 785f, "Этанол E85", "E85")
+    GASOLINE(14.7f, 745f, R.string.fuel_type_gasoline),
+    DIESEL(14.5f, 840f, R.string.fuel_type_diesel),
+    LPG(15.7f, 510f, R.string.fuel_type_lpg),
+    CNG(17.2f, 128f, R.string.fuel_type_cng),
+    E85(9.8f, 785f, R.string.fuel_type_e85)
 }

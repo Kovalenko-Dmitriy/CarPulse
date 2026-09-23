@@ -44,7 +44,9 @@ fun SettingsScreen(vm: AppViewModel) {
         Spacer(Modifier.height(8.dp))
         ThemeMode.entries.forEach { mode ->
             Row(
-                Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 RadioButton(
@@ -54,9 +56,9 @@ fun SettingsScreen(vm: AppViewModel) {
                 Text(
                     when (mode) {
                         ThemeMode.SYSTEM -> stringResource(R.string.settings_theme_system)
-                        ThemeMode.LIGHT  -> stringResource(R.string.settings_theme_light)
-                        ThemeMode.DARK   -> stringResource(R.string.settings_theme_dark)
-                        ThemeMode.AUTO   -> stringResource(R.string.settings_theme_auto)
+                        ThemeMode.LIGHT -> stringResource(R.string.settings_theme_light)
+                        ThemeMode.DARK -> stringResource(R.string.settings_theme_dark)
+                        ThemeMode.AUTO -> stringResource(R.string.settings_theme_auto)
                     }
                 )
             }
@@ -77,7 +79,9 @@ fun SettingsScreen(vm: AppViewModel) {
         Spacer(Modifier.height(8.dp))
         Units.entries.forEach { u ->
             Row(
-                Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 RadioButton(
@@ -99,7 +103,7 @@ fun SettingsScreen(vm: AppViewModel) {
         // Топливо
         // ============================================================
         Text(
-            "Топливо",
+            stringResource(R.string.settings_fuel_section),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary
         )
@@ -109,82 +113,79 @@ fun SettingsScreen(vm: AppViewModel) {
         var dispText by remember { mutableStateOf(settings.displacementL.toString()) }
         OutlinedTextField(
             value = dispText,
-            onValueChange = {
-                dispText = it
+            onValueChange = { dispText = it
                 it.replace(',', '.').toFloatOrNull()?.let { v -> vm.setDisplacement(v) }
             },
-            label = { Text("Литраж двигателя") },
+            label = { Text(stringResource(R.string.settings_displacement)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
-
         Spacer(Modifier.height(8.dp))
 
         // Объёмный КПД
-        var veText by remember { mutableStateOf(settings.volumetricEfficiency.toString()) }
+        var veText by remember {
+            mutableStateOf(settings.volumetricEfficiency.toString())
+        }
         OutlinedTextField(
             value = veText,
-            onValueChange = {
-                veText = it
+            onValueChange = { veText = it
                 it.replace(',', '.').toFloatOrNull()?.let { v -> vm.setVolumetricEfficiency(v) }
             },
-            label = { Text("Объёмный КПД (0.70–1.00)") },
+            label = { Text(stringResource(R.string.settings_ve)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
-
         Spacer(Modifier.height(8.dp))
 
         // Тип топлива
-        Text("Тип топлива", style = MaterialTheme.typography.bodyMedium)
+        Text(
+            stringResource(R.string.settings_fuel_type),
+            style = MaterialTheme.typography.bodyMedium
+        )
         FuelType.entries.forEach { ft ->
             Row(
-                Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 RadioButton(
                     selected = settings.fuelType == ft.name,
                     onClick = { vm.setFuelType(ft.name) }
                 )
-                Text(ft.labelRu)
+                Text(stringResource(ft.labelRes))
             }
         }
-
         Spacer(Modifier.height(8.dp))
 
         // Цена за литр
         var priceText by remember {
-            mutableStateOf(if (settings.fuelPricePerLiter > 0f)
-                settings.fuelPricePerLiter.toString() else "")
+            mutableStateOf(if (settings.fuelPricePerLiter > 0f) settings.fuelPricePerLiter.toString() else "")
         }
         OutlinedTextField(
             value = priceText,
-            onValueChange = {
-                priceText = it
+            onValueChange = { priceText = it
                 it.replace(',', '.').toFloatOrNull()?.let { v -> vm.setFuelPrice(v) }
             },
-            label = { Text("Цена за литр") },
+            label = { Text(stringResource(R.string.settings_fuel_price)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
-
         Spacer(Modifier.height(8.dp))
 
         // Одометр
         var odoText by remember {
-            mutableStateOf(if (settings.odometerKm > 0f)
-                settings.odometerKm.toInt().toString() else "")
+            mutableStateOf(if (settings.odometerKm > 0f) settings.odometerKm.toInt().toString() else "")
         }
         OutlinedTextField(
             value = odoText,
-            onValueChange = {
-                odoText = it
+            onValueChange = { odoText = it
                 it.replace(',', '.').toFloatOrNull()?.let { v -> vm.setOdometer(v) }
             },
-            label = { Text("Текущий одометр, км") },
+            label = { Text(stringResource(R.string.settings_odometer)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
@@ -206,7 +207,9 @@ fun SettingsScreen(vm: AppViewModel) {
         val intervals = listOf(150L, 300L, 500L, 1000L)
         intervals.forEach { ms ->
             Row(
-                Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 RadioButton(

@@ -1,27 +1,31 @@
 package com.carpulse.obd.data.obd
 
+import androidx.annotation.StringRes
+import com.carpulse.obd.R
+import com.carpulse.obd.domain.units.UnitType
+
 /**
  * Полный каталог PID Mode 01 (SAE J1979).
+ *
  * Поддерживаемые конкретной машиной определяются через SupportedPidsDetector.
  *
- * @param cmd         команда ELM327 ("010C")
- * @param labelRu     название на русском
- * @param labelEn     название на английском
- * @param unitRu      единица измерения (русская)
- * @param unitEn      единица измерения (английская)
- * @param min         минимум для шкалы
- * @param max         максимум для шкалы
- * @param warn        порог предупреждения
- * @param danger      порог опасности
+ * @param cmd          команда ELM327 ("010C")
+ * @param labelRes     ресурс названия (локализованный)
+ * @param unitType     тип физической величины → определяет единицы отображения.
+ *                     min/max/warn/danger хранятся в МЕТРИЧЕСКИХ единицах
+ *                     (unitType.metricRes).
+ * @param min          минимум для шкалы (метрика)
+ * @param max          максимум для шкалы (метрика)
+ * @param warn         порог предупреждения (метрика)
+ * @param danger       порог опасности (метрика)
  * @param lowerIsWorse true для параметров, где плохо НИЗКОЕ значение
- * @param category    группа для UI (двигатель, топливо, воздух, ...)
+ *                     (например, напряжение бортовой сети, уровень топлива)
+ * @param category     группа для UI (двигатель, топливо, воздух, ...)
  */
 enum class Pid(
     val cmd: String,
-    val labelRu: String,
-    val labelEn: String,
-    val unitRu: String,
-    val unitEn: String,
+    @StringRes val labelRes: Int,
+    val unitType: UnitType,
     val min: Float,
     val max: Float,
     val warn: Float? = null,
@@ -29,89 +33,233 @@ enum class Pid(
     val lowerIsWorse: Boolean = false,
     val category: PidCategory = PidCategory.OTHER
 ) {
-
     // ============================================================
     // Двигатель и топливная система
     // ============================================================
-    FUEL_STATUS    ("0103", "Топливная система", "Fuel system status", "", "", 0f, 1f, category = PidCategory.FUEL),
-    LOAD           ("0104", "Нагрузка на двигатель", "Calculated engine load", "%", "%", 0f, 100f, 80f, 95f, category = PidCategory.ENGINE),
-    COOLANT        ("0105", "Температура ОЖ", "Coolant temperature", "°C", "°C", -40f, 120f, 100f, 110f, category = PidCategory.ENGINE),
-    STFT1          ("0106", "Краткосрочная коррекция (банк 1)", "Short term fuel trim (bank 1)", "%", "%", -100f, 100f, category = PidCategory.FUEL),
-    LTFT1          ("0107", "Долгосрочная коррекция (банк 1)", "Long term fuel trim (bank 1)", "%", "%", -100f, 100f, category = PidCategory.FUEL),
-    STFT2          ("0108", "Краткосрочная коррекция (банк 2)", "Short term fuel trim (bank 2)", "%", "%", -100f, 100f, category = PidCategory.FUEL),
-    LTFT2          ("0109", "Долгосрочная коррекция (банк 2)", "Long term fuel trim (bank 2)", "%", "%", -100f, 100f, category = PidCategory.FUEL),
-    FUEL_PRESSURE  ("010A", "Давление топлива", "Fuel pressure", "кПа", "kPa", 0f, 765f, category = PidCategory.FUEL),
-    FUEL_RAIL_REL  ("0122", "Давление в рампе (отн.)", "Fuel rail pressure (rel.)", "кПа", "kPa", 0f, 5178f, category = PidCategory.FUEL),
-    FUEL_RAIL_ABS  ("0123", "Давление в рампе (абс.)", "Fuel rail pressure (abs.)", "кПа", "kPa", 0f, 655350f, category = PidCategory.FUEL),
-    FUEL_LEVEL     ("012F", "Уровень топлива", "Fuel level", "%", "%", 0f, 100f, 20f, null, lowerIsWorse = true, category = PidCategory.FUEL),
+    FUEL_STATUS(
+        "0103", R.string.pid_0103_label, UnitType.NONE,
+        0f, 1f, category = PidCategory.FUEL
+    ),
+    LOAD(
+        "0104", R.string.pid_0104_label, UnitType.PERCENT,
+        0f, 100f, 80f, 95f, category = PidCategory.ENGINE
+    ),
+    COOLANT(
+        "0105", R.string.pid_0105_label, UnitType.CELSIUS,
+        -40f, 120f, 100f, 110f, category = PidCategory.ENGINE
+    ),
+    STFT1(
+        "0106", R.string.pid_0106_label, UnitType.PERCENT,
+        -100f, 100f, category = PidCategory.FUEL
+    ),
+    LTFT1(
+        "0107", R.string.pid_0107_label, UnitType.PERCENT,
+        -100f, 100f, category = PidCategory.FUEL
+    ),
+    STFT2(
+        "0108", R.string.pid_0108_label, UnitType.PERCENT,
+        -100f, 100f, category = PidCategory.FUEL
+    ),
+    LTFT2(
+        "0109", R.string.pid_0109_label, UnitType.PERCENT,
+        -100f, 100f, category = PidCategory.FUEL
+    ),
+    FUEL_PRESSURE(
+        "010A", R.string.pid_010a_label, UnitType.KPA,
+        0f, 765f, category = PidCategory.FUEL
+    ),
+    FUEL_RAIL_REL(
+        "0122", R.string.pid_0122_label, UnitType.KPA,
+        0f, 5178f, category = PidCategory.FUEL
+    ),
+    FUEL_RAIL_ABS(
+        "0123", R.string.pid_0123_label, UnitType.KPA,
+        0f, 655350f, category = PidCategory.FUEL
+    ),
+    FUEL_LEVEL(
+        "012F", R.string.pid_012f_label, UnitType.PERCENT,
+        0f, 100f, 20f, null, lowerIsWorse = true, category = PidCategory.FUEL
+    ),
 
     // ============================================================
     // Впуск и воздух
     // ============================================================
-    MAP            ("010B", "Давление во впуске (MAP)", "Intake manifold pressure", "кПа", "kPa", 0f, 255f, category = PidCategory.AIR),
-    INTAKE         ("010F", "Температура впуска (IAT)", "Intake air temperature", "°C", "°C", -40f, 80f, 60f, 70f, category = PidCategory.AIR),
-    MAF            ("0110", "Расход воздуха (MAF)", "Mass air flow", "г/с", "g/s", 0f, 655f, category = PidCategory.AIR),
-    THROTTLE       ("0111", "Положение дросселя", "Throttle position", "%", "%", 0f, 100f, category = PidCategory.AIR),
-    BARO           ("0133", "Барометрическое давление", "Barometric pressure", "кПа", "kPa", 0f, 255f, category = PidCategory.AIR),
-    AMBIENT        ("0146", "Температура воздуха", "Ambient air temperature", "°C", "°C", -40f, 80f, category = PidCategory.AIR),
-    THROTTLE_REL   ("0145", "Относительное положение дросселя", "Relative throttle position", "%", "%", 0f, 100f, category = PidCategory.AIR),
-    THROTTLE_B     ("0147", "Положение дросселя B", "Absolute throttle position B", "%", "%", 0f, 100f, category = PidCategory.AIR),
-    THROTTLE_C     ("0148", "Положение дросселя C", "Absolute throttle position C", "%", "%", 0f, 100f, category = PidCategory.AIR),
-    ACCEL_D        ("0149", "Педаль акселератора D", "Accelerator pedal position D", "%", "%", 0f, 100f, category = PidCategory.AIR),
-    ACCEL_E        ("014A", "Педаль акселератора E", "Accelerator pedal position E", "%", "%", 0f, 100f, category = PidCategory.AIR),
-    ACCEL_F        ("014B", "Педаль акселератора F", "Accelerator pedal position F", "%", "%", 0f, 100f, category = PidCategory.AIR),
+    MAP(
+        "010B", R.string.pid_010b_label, UnitType.KPA,
+        0f, 255f, category = PidCategory.AIR
+    ),
+    INTAKE(
+        "010F", R.string.pid_010f_label, UnitType.CELSIUS,
+        -40f, 80f, 60f, 70f, category = PidCategory.AIR
+    ),
+    MAF(
+        "0110", R.string.pid_0110_label, UnitType.MAF,
+        0f, 655f, category = PidCategory.AIR
+    ),
+    THROTTLE(
+        "0111", R.string.pid_0111_label, UnitType.PERCENT,
+        0f, 100f, category = PidCategory.AIR
+    ),
+    BARO(
+        "0133", R.string.pid_0133_label, UnitType.KPA,
+        0f, 255f, category = PidCategory.AIR
+    ),
+    AMBIENT(
+        "0146", R.string.pid_0146_label, UnitType.CELSIUS,
+        -40f, 80f, category = PidCategory.AIR
+    ),
+    THROTTLE_REL(
+        "0145", R.string.pid_0145_label, UnitType.PERCENT,
+        0f, 100f, category = PidCategory.AIR
+    ),
+    THROTTLE_B(
+        "0147", R.string.pid_0147_label, UnitType.PERCENT,
+        0f, 100f, category = PidCategory.AIR
+    ),
+    THROTTLE_C(
+        "0148", R.string.pid_0148_label, UnitType.PERCENT,
+        0f, 100f, category = PidCategory.AIR
+    ),
+    ACCEL_D(
+        "0149", R.string.pid_0149_label, UnitType.PERCENT,
+        0f, 100f, category = PidCategory.AIR
+    ),
+    ACCEL_E(
+        "014A", R.string.pid_014a_label, UnitType.PERCENT,
+        0f, 100f, category = PidCategory.AIR
+    ),
+    ACCEL_F(
+        "014B", R.string.pid_014b_label, UnitType.PERCENT,
+        0f, 100f, category = PidCategory.AIR
+    ),
 
     // ============================================================
     // Обороты, скорость, зажигание
     // ============================================================
-    RPM            ("010C", "Обороты двигателя", "Engine RPM", "об/мин", "rpm", 0f, 8000f, 5500f, 6500f, category = PidCategory.ENGINE),
-    SPEED          ("010D", "Скорость автомобиля", "Vehicle speed", "км/ч", "km/h", 0f, 255f, 120f, 160f, category = PidCategory.ENGINE),
-    TIMING         ("010E", "Опережение зажигания", "Timing advance", "°", "°", -64f, 64f, category = PidCategory.ENGINE),
+    RPM(
+        "010C", R.string.pid_010c_label, UnitType.RPM,
+        0f, 8000f, 5500f, 6500f, category = PidCategory.ENGINE
+    ),
+    SPEED(
+        "010D", R.string.pid_010d_label, UnitType.SPEED,
+        0f, 255f, 120f, 160f, category = PidCategory.ENGINE
+    ),
+    TIMING(
+        "010E", R.string.pid_010e_label, UnitType.DEGREE,
+        -64f, 64f, category = PidCategory.ENGINE
+    ),
 
     // ============================================================
     // Датчики кислорода
     // ============================================================
-    O2_B1S1_V      ("0114", "O2 B1S1 напряжение", "O2 B1S1 voltage", "В", "V", 0f, 1.275f, category = PidCategory.O2),
-    O2_B1S2_V      ("0115", "O2 B1S2 напряжение", "O2 B1S2 voltage", "В", "V", 0f, 1.275f, category = PidCategory.O2),
-    O2_B1S3_V      ("0116", "O2 B1S3 напряжение", "O2 B1S3 voltage", "В", "V", 0f, 1.275f, category = PidCategory.O2),
-    O2_B1S4_V      ("0117", "O2 B1S4 напряжение", "O2 B1S4 voltage", "В", "V", 0f, 1.275f, category = PidCategory.O2),
-    O2_B2S1_V      ("0118", "O2 B2S1 напряжение", "O2 B2S1 voltage", "В", "V", 0f, 1.275f, category = PidCategory.O2),
-    O2_B2S2_V      ("0119", "O2 B2S2 напряжение", "O2 B2S2 voltage", "В", "V", 0f, 1.275f, category = PidCategory.O2),
+    O2_B1S1_V(
+        "0114", R.string.pid_0114_label, UnitType.VOLT,
+        0f, 1.275f, category = PidCategory.O2
+    ),
+    O2_B1S2_V(
+        "0115", R.string.pid_0115_label, UnitType.VOLT,
+        0f, 1.275f, category = PidCategory.O2
+    ),
+    O2_B1S3_V(
+        "0116", R.string.pid_0116_label, UnitType.VOLT,
+        0f, 1.275f, category = PidCategory.O2
+    ),
+    O2_B1S4_V(
+        "0117", R.string.pid_0117_label, UnitType.VOLT,
+        0f, 1.275f, category = PidCategory.O2
+    ),
+    O2_B2S1_V(
+        "0118", R.string.pid_0118_label, UnitType.VOLT,
+        0f, 1.275f, category = PidCategory.O2
+    ),
+    O2_B2S2_V(
+        "0119", R.string.pid_0119_label, UnitType.VOLT,
+        0f, 1.275f, category = PidCategory.O2
+    ),
 
     // ============================================================
     // Экология и выхлоп
     // ============================================================
-    EGR_CMD        ("012C", "Команда EGR", "Commanded EGR", "%", "%", 0f, 100f, category = PidCategory.EMISSIONS),
-    EGR_ERR        ("012D", "Ошибка EGR", "EGR error", "%", "%", -100f, 100f, category = PidCategory.EMISSIONS),
-    EVAP_CMD       ("012E", "Продувка адсорбера EVAP", "Commanded evaporative purge", "%", "%", 0f, 100f, category = PidCategory.EMISSIONS),
-    WARMUPS        ("0130", "Прогревов с последнего сброса", "Warm-ups since codes cleared", "", "", 0f, 255f, category = PidCategory.EMISSIONS),
-    DIST_CLEARED   ("0131", "Пробег после сброса кодов", "Distance since codes cleared", "км", "km", 0f, 65535f, category = PidCategory.EMISSIONS),
-    EVAP_PRESSURE  ("0132", "Давление паров EVAP", "Evap system vapor pressure", "Па", "Pa", -8192f, 8191f, category = PidCategory.EMISSIONS),
-    CAT_B1S1       ("013C", "Катализатор B1S1", "Catalyst temperature B1S1", "°C", "°C", -40f, 1200f, category = PidCategory.EMISSIONS),
-    CAT_B1S2       ("013D", "Катализатор B1S2", "Catalyst temperature B1S2", "°C", "°C", -40f, 1200f, category = PidCategory.EMISSIONS),
-    CAT_B2S1       ("013E", "Катализатор B2S1", "Catalyst temperature B2S1", "°C", "°C", -40f, 1200f, category = PidCategory.EMISSIONS),
-    CAT_B2S2       ("013F", "Катализатор B2S2", "Catalyst temperature B2S2", "°C", "°C", -40f, 1200f, category = PidCategory.EMISSIONS),
+    EGR_CMD(
+        "012C", R.string.pid_012c_label, UnitType.PERCENT,
+        0f, 100f, category = PidCategory.EMISSIONS
+    ),
+    EGR_ERR(
+        "012D", R.string.pid_012d_label, UnitType.PERCENT,
+        -100f, 100f, category = PidCategory.EMISSIONS
+    ),
+    EVAP_CMD(
+        "012E", R.string.pid_012e_label, UnitType.PERCENT,
+        0f, 100f, category = PidCategory.EMISSIONS
+    ),
+    WARMUPS(
+        "0130", R.string.pid_0130_label, UnitType.NONE,
+        0f, 255f, category = PidCategory.EMISSIONS
+    ),
+    DIST_CLEARED(
+        "0131", R.string.pid_0131_label, UnitType.KM,
+        0f, 65535f, category = PidCategory.EMISSIONS
+    ),
+    EVAP_PRESSURE(
+        "0132", R.string.pid_0132_label, UnitType.PA,
+        -8192f, 8191f, category = PidCategory.EMISSIONS
+    ),
+    CAT_B1S1(
+        "013C", R.string.pid_013c_label, UnitType.CELSIUS,
+        -40f, 1200f, category = PidCategory.EMISSIONS
+    ),
+    CAT_B1S2(
+        "013D", R.string.pid_013d_label, UnitType.CELSIUS,
+        -40f, 1200f, category = PidCategory.EMISSIONS
+    ),
+    CAT_B2S1(
+        "013E", R.string.pid_013e_label, UnitType.CELSIUS,
+        -40f, 1200f, category = PidCategory.EMISSIONS
+    ),
+    CAT_B2S2(
+        "013F", R.string.pid_013f_label, UnitType.CELSIUS,
+        -40f, 1200f, category = PidCategory.EMISSIONS
+    ),
 
     // ============================================================
     // Электрика
     // ============================================================
-    VOLTAGE        ("0142", "Напряжение бортовой сети", "Control module voltage", "В", "V", 0f, 20f, 12.2f, 11.8f, lowerIsWorse = true, category = PidCategory.ELECTRICAL),
+    VOLTAGE(
+        "0142", R.string.pid_0142_label, UnitType.VOLT,
+        0f, 20f, 12.2f, 11.8f, lowerIsWorse = true, category = PidCategory.ELECTRICAL
+    ),
 
     // ============================================================
     // Дополнительные
     // ============================================================
-    RUN_TIME       ("011F", "Время работы с запуска", "Run time since engine start", "с", "s", 0f, 65535f, category = PidCategory.OTHER),
-    MIL_DISTANCE   ("0121", "Пробег с MIL", "Distance traveled with MIL on", "км", "km", 0f, 65535f, category = PidCategory.OTHER),
-    MIL_TIME       ("014D", "Время с MIL", "Time run with MIL on", "мин", "min", 0f, 65535f, category = PidCategory.OTHER),
-    TIME_CLEARED   ("014E", "Время с последнего сброса", "Time since codes cleared", "мин", "min", 0f, 65535f, category = PidCategory.OTHER),
+    RUN_TIME(
+        "011F", R.string.pid_011f_label, UnitType.SECOND,
+        0f, 65535f, category = PidCategory.OTHER
+    ),
+    MIL_DISTANCE(
+        "0121", R.string.pid_0121_label, UnitType.KM,
+        0f, 65535f, category = PidCategory.OTHER
+    ),
+    MIL_TIME(
+        "014D", R.string.pid_014d_label, UnitType.MINUTE,
+        0f, 65535f, category = PidCategory.OTHER
+    ),
+    TIME_CLEARED(
+        "014E", R.string.pid_014e_label, UnitType.MINUTE,
+        0f, 65535f, category = PidCategory.OTHER
+    ),
 }
 
-enum class PidCategory(val labelRu: String, val labelEn: String) {
-    ENGINE("Двигатель", "Engine"),
-    FUEL("Топливо", "Fuel"),
-    AIR("Воздух", "Air"),
-    O2("Датчики O₂", "O₂ sensors"),
-    EMISSIONS("Экология", "Emissions"),
-    ELECTRICAL("Электрика", "Electrical"),
-    OTHER("Прочее", "Other")
+/**
+ * Категории PID для группировки в UI.
+ * Названия — через строковые ресурсы, чтобы работала локализация.
+ */
+enum class PidCategory(@StringRes val labelRes: Int) {
+    ENGINE(R.string.category_engine),
+    FUEL(R.string.category_fuel),
+    AIR(R.string.category_air),
+    O2(R.string.category_o2),
+    EMISSIONS(R.string.category_emissions),
+    ELECTRICAL(R.string.category_electrical),
+    OTHER(R.string.category_other)
 }
