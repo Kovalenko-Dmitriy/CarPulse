@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CarPulse</string>
+
+    <!-- Навигация -->
+    <string name="tab_dashboard">Панель</string>
+    <string name="tab_custom">Свои</string>
+    <string name="tab_fuel">Топливо</string>
+    <string name="tab_live">Графики</string>
+    <string name="tab_errors">Ошибки</string>
+    <string name="tab_vehicle">Авто</string>
+    <string name="tab_connection">Связь</string>
+    <string name="tab_settings">Настройки</string>
+
+    <!-- Приборная панель -->
+    <string name="dashboard_title">Приборная панель</string>
+    <string name="dashboard_subtitle">Данные с адаптера в реальном времени</string>
+    <string name="dashboard_not_connected">Адаптер не подключён. Перейдите во вкладку «Связь».</string>
+    <string name="dashboard_battery">Напряжение бортсети</string>
+    <string name="dashboard_unit_volt">В</string>
+    <string name="dashboard_placeholder">—</string>
+
+    <!-- Датчики -->
+    <string name="gauge_rpm">Обороты</string>
+    <string name="gauge_speed">Скорость</string>
+    <string name="gauge_coolant">ОЖ</string>
+    <string name="gauge_intake">Впуск</string>
+    <string name="gauge_load">Нагрузка</string>
+    <string name="gauge_throttle">Дроссель</string>
+    <string name="gauge_fuel">Топливо</string>
+    <string name="unit_rpm">об/мин</string>
+    <string name="unit_speed_kmh">км/ч</string>
+    <string name="unit_celsius">°C</string>
+    <string name="unit_percent">%</string>
+
+    <!-- Экран "Связь" -->
+    <string name="connection_status_disconnected">Отключено</string>
+    <string name="connection_status_bt_connecting">Поиск адаптера…</string>
+    <string name="connection_status_bt_connected">Адаптер подключён: %1$s</string>
+    <string name="connection_status_bt_error">Ошибка Bluetooth: %1$s</string>
+    <string name="connection_status_obd_initializing">Инициализация ЭБУ…</string>
+    <string name="connection_status_obd_connected">Готово. Протокол: %1$s</string>
+    <string name="connection_status_obd_error">ЭБУ не отвечает: %1$s</string>
+    <string name="connection_obd_error_hint">Проверьте зажигание (ON), плотность адаптера в разъёме, и попробуйте снова.</string>
+    <string name="connection_retry_obd">Повторить ЭБУ</string>
+    <string name="connection_paired_devices">Сопряжённые устройства</string>
+    <string name="connection_refresh">Обновить</string>
+    <string name="connection_connect">Подключиться</string>
+    <string name="connection_disconnect">Отключить</string>
+    <string name="connection_no_paired">Нет сопряжённых устройств. Сопрягите ELM327 в настройках Bluetooth.</string>
+    <string name="connection_no_bt">Устройство не поддерживает Bluetooth</string>
+    <string name="connection_bt_off">Bluetooth выключен. Включите его в настройках.</string>
+    <string name="connection_enable_bt">Включить Bluetooth</string>
+    <string name="connection_change_device">Сменить</string>
+    <string name="connection_forget_device">Забыть устройство</string>
+
+    <!-- Ошибки -->
+    <string name="errors_title">Ошибки (DTC)</string>
+    <string name="errors_subtitle">Диагностические коды неисправностей</string>
+    <string name="errors_read">Читать</string>
+    <string name="errors_read_in_progress">Чтение…</string>
+    <string name="errors_clear">Сбросить</string>
+    <string name="errors_clear_in_progress">Сброс…</string>
+    <string name="errors_none">Активных ошибок нет</string>
+    <string name="errors_active">Активные коды:</string>
+    <string name="errors_history">История</string>
+    <string name="errors_history_empty">Пусто</string>
+    <string name="errors_confirm_clear">Сбросить все ошибки?</string>
+    <string name="errors_confirm_clear_desc">Это удалит коды из памяти ЭБУ и погасит индикатор Check Engine. Продолжить?</string>
+    <string name="errors_confirm_yes">Сбросить</string>
+    <string name="errors_confirm_no">Отмена</string>
+    <string name="errors_not_connected">Адаптер не подключён. Перейдите во вкладку «Связь».</string>
+    <string name="errors_unknown_code">Неизвестный код</string>
+    <string name="errors_cleared_success">Ошибки сброшены</string>
+    <string name="errors_clear_failed">Не удалось сбросить ошибки</string>
+    <string name="errors_search_hint">Поиск по коду (например, P0301)</string>
+    <string name="errors_category">Категория</string>
+    <string name="errors_causes">Вероятные причины</string>
+    <string name="errors_no_causes">Причины не указаны</string>
+    <string name="errors_repair_info">Ремонт</string>
+    <string name="errors_difficulty">Сложность</string>
+    <string name="errors_cost">Стоимость</string>
+    <string name="errors_hours">Время</string>
+    <string name="errors_diy_yes">Можно своими руками</string>
+    <string name="errors_diy_no">Требуется сервис</string>
+    <string name="errors_mil_yes">Check Engine</string>
+    <string name="errors_emissions_yes">Влияет на экологию</string>
+    <string name="errors_details">Подробнее</string>
+    <string name="errors_likelihood_high">Высокая</string>
+    <string name="errors_likelihood_medium">Средняя</string>
+    <string name="errors_likelihood_low">Низкая</string>
+    <string name="errors_difficulty_easy">Легко</string>
+    <string name="errors_difficulty_medium">Средне</string>
+    <string name="errors_difficulty_hard">Сложно</string>
+    <string name="errors_category_powertrain">Двигатель</string>
+    <string name="errors_category_body">Кузов</string>
+    <string name="errors_category_chassis">Шасси</string>
+    <string name="errors_category_network">Сеть</string>
+
+    <!-- Графики -->
+    <string name="live_title">Живые данные</string>
+    <string name="live_subtitle">Последние 300 значений</string>
+    <string name="live_no_data">Нет данных. Подключитесь к адаптеру на вкладке «Связь».</string>
+    <string name="live_clear">Очистить</string>
+
+    <!-- Автомобиль -->
+    <string name="vehicle_title">Информация об автомобиле</string>
+    <string name="vehicle_subtitle">Считано через Mode 09 OBD-II</string>
+    <string name="vehicle_read">Считать данные</string>
+    <string name="vehicle_reading">Чтение…</string>
+    <string name="vehicle_not_connected">Адаптер не подключён.</string>
+    <string name="vehicle_vin">VIN (номер кузова)</string>
+    <string name="vehicle_cal_id">Calibration ID (прошивка)</string>
+    <string name="vehicle_cvn">CVN (контрольная сумма)</string>
+    <string name="vehicle_ecu_name">ECU Name (блок управления)</string>
+    <string name="vehicle_supported_pids">Поддерживаемые PID Mode 09</string>
+    <string name="vehicle_no_data">Данные не поддерживаются этим ЭБУ</string>
+    <string name="vehicle_clear">Очистить</string>
+
+    <!-- Настройки -->
+    <string name="settings_title">Настройки</string>
+    <string name="settings_theme">Тема</string>
+    <string name="settings_theme_system">Как в системе</string>
+    <string name="settings_theme_light">Светлая</string>
+    <string name="settings_theme_dark">Тёмная</string>
+    <string name="settings_theme_auto">Авто (день/ночь)</string>
+    <string name="settings_units">Единицы измерения</string>
+    <string name="settings_units_metric">Метрические (км/ч, °C)</string>
+    <string name="settings_units_imperial">Имперские (mph, °F)</string>
+    <string name="settings_interval">Интервал опроса адаптера</string>
+    <string name="settings_autoconnect">Автоподключение</string>
+    <string name="settings_about">О приложении</string>
+
+    <!-- Поездки -->
+    <string name="trips_title">Поездки</string>
+    <string name="tab_trips">Поездки</string>
+
+    <!-- Экран Поездки -->
+    <string name="trips_map_empty">Нет данных для отображения трека</string>
+    <string name="trips_recording_title">Идёт запись поездки</string>
+    <string name="trips_all_title">Все поездки</string>
+    <string name="trips_count_fmt">Всего: %1$d</string>
+    <string name="trips_empty">Поездок пока нет</string>
+    <string name="trips_delete_title">Удалить поездку?</string>
+    <string name="trips_delete_message">Поездка от %1$s будет удалена вместе с треком. Это действие нельзя отменить.</string>
+    <string name="trips_delete_confirm">Удалить</string>
+    <string name="trips_delete_cancel">Отмена</string>
+    <string name="trips_metric_avg">Ср.</string>
+    <string name="trips_metric_max">Макс.</string>
+
+    <!-- Уведомление сервиса записи -->
+    <string name="trip_notification_title">Запись поездки</string>
+    <string name="trip_notification_text">CarPulse записывает маршрут</string>
+    <string name="trip_notification_stop">Стоп</string>
+    <string name="trip_channel_name">Запись поездки</string>
+    <string name="trip_channel_desc">Уведомление о фоновой записи маршрута</string>
+</resources>

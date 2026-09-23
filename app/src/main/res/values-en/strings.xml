@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CarPulse</string>
+
+    <!-- Navigation -->
+    <string name="tab_dashboard">Dashboard</string>
+    <string name="tab_custom">Custom</string>
+    <string name="tab_fuel">Fuel</string>
+    <string name="tab_live">Charts</string>
+    <string name="tab_errors">Errors</string>
+    <string name="tab_vehicle">Vehicle</string>
+    <string name="tab_connection">Connection</string>
+    <string name="tab_settings">Settings</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">Dashboard</string>
+    <string name="dashboard_subtitle">Live data from adapter</string>
+    <string name="dashboard_not_connected">Adapter is not connected. Go to the "Connection" tab.</string>
+    <string name="dashboard_battery">Battery voltage</string>
+    <string name="dashboard_unit_volt">V</string>
+    <string name="dashboard_placeholder">—</string>
+
+    <!-- Gauges -->
+    <string name="gauge_rpm">RPM</string>
+    <string name="gauge_speed">Speed</string>
+    <string name="gauge_coolant">Coolant</string>
+    <string name="gauge_intake">Intake</string>
+    <string name="gauge_load">Load</string>
+    <string name="gauge_throttle">Throttle</string>
+    <string name="gauge_fuel">Fuel</string>
+    <string name="unit_rpm">rpm</string>
+    <string name="unit_speed_kmh">km/h</string>
+    <string name="unit_celsius">°C</string>
+    <string name="unit_percent">%</string>
+
+    <!-- Connection -->
+    <string name="connection_status_disconnected">Disconnected</string>
+    <string name="connection_status_bt_connecting">Searching for adapter…</string>
+    <string name="connection_status_bt_connected">Adapter connected: %1$s</string>
+    <string name="connection_status_bt_error">Bluetooth error: %1$s</string>
+    <string name="connection_status_obd_initializing">Initializing ECU…</string>
+    <string name="connection_status_obd_connected">Ready. Protocol: %1$s</string>
+    <string name="connection_status_obd_error">ECU not responding: %1$s</string>
+    <string name="connection_obd_error_hint">Check ignition (ON), reseat the adapter, and try again.</string>
+    <string name="connection_retry_obd">Retry ECU</string>
+    <string name="connection_paired_devices">Paired devices</string>
+    <string name="connection_refresh">Refresh</string>
+    <string name="connection_connect">Connect</string>
+    <string name="connection_disconnect">Disconnect</string>
+    <string name="connection_no_paired">No paired devices. Pair your ELM327 in Bluetooth settings.</string>
+    <string name="connection_no_bt">Device does not support Bluetooth</string>
+    <string name="connection_bt_off">Bluetooth is off. Enable it in settings.</string>
+    <string name="connection_enable_bt">Enable Bluetooth</string>
+    <string name="connection_change_device">Change</string>
+    <string name="connection_forget_device">Forget device</string>
+
+    <!-- Errors -->
+    <string name="errors_title">DTC Errors</string>
+    <string name="errors_subtitle">Diagnostic trouble codes</string>
+    <string name="errors_read">Read</string>
+    <string name="errors_read_in_progress">Reading…</string>
+    <string name="errors_clear">Clear</string>
+    <string name="errors_clear_in_progress">Clearing…</string>
+    <string name="errors_none">No active errors</string>
+    <string name="errors_active">Active codes:</string>
+    <string name="errors_history">History</string>
+    <string name="errors_history_empty">Empty</string>
+    <string name="errors_confirm_clear">Clear all errors?</string>
+    <string name="errors_confirm_clear_desc">This will erase DTCs from ECU memory and turn off the Check Engine light. Continue?</string>
+    <string name="errors_confirm_yes">Clear</string>
+    <string name="errors_confirm_no">Cancel</string>
+    <string name="errors_not_connected">Adapter is not connected. Go to the "Connection" tab.</string>
+    <string name="errors_unknown_code">Unknown code</string>
+    <string name="errors_cleared_success">Errors cleared</string>
+    <string name="errors_clear_failed">Failed to clear errors</string>
+    <string name="errors_search_hint">Search by code (e.g. P0301)</string>
+    <string name="errors_category">Category</string>
+    <string name="errors_causes">Possible causes</string>
+    <string name="errors_no_causes">No causes listed</string>
+    <string name="errors_repair_info">Repair</string>
+    <string name="errors_difficulty">Difficulty</string>
+    <string name="errors_cost">Cost</string>
+    <string name="errors_hours">Time</string>
+    <string name="errors_diy_yes">DIY possible</string>
+    <string name="errors_diy_no">Service required</string>
+    <string name="errors_mil_yes">Check Engine</string>
+    <string name="errors_emissions_yes">Affects emissions</string>
+    <string name="errors_details">Details</string>
+    <string name="errors_likelihood_high">High</string>
+    <string name="errors_likelihood_medium">Medium</string>
+    <string name="errors_likelihood_low">Low</string>
+    <string name="errors_difficulty_easy">Easy</string>
+    <string name="errors_difficulty_medium">Medium</string>
+    <string name="errors_difficulty_hard">Hard</string>
+    <string name="errors_category_powertrain">Powertrain</string>
+    <string name="errors_category_body">Body</string>
+    <string name="errors_category_chassis">Chassis</string>
+    <string name="errors_category_network">Network</string>
+
+    <!-- Charts -->
+    <string name="live_title">Live data</string>
+    <string name="live_subtitle">Last 300 samples</string>
+    <string name="live_no_data">No data. Connect to the adapter in the "Connection" tab.</string>
+    <string name="live_clear">Clear</string>
+
+    <!-- Vehicle -->
+    <string name="vehicle_title">Vehicle information</string>
+    <string name="vehicle_subtitle">Read via Mode 09 OBD-II</string>
+    <string name="vehicle_read">Read data</string>
+    <string name="vehicle_reading">Reading…</string>
+    <string name="vehicle_not_connected">Adapter is not connected.</string>
+    <string name="vehicle_vin">VIN</string>
+    <string name="vehicle_cal_id">Calibration ID</string>
+    <string name="vehicle_cvn">CVN</string>
+    <string name="vehicle_ecu_name">ECU Name</string>
+    <string name="vehicle_supported_pids">Supported Mode 09 PIDs</string>
+    <string name="vehicle_no_data">Data not supported by this ECU</string>
+    <string name="vehicle_clear">Clear</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System default</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_auto">Auto (day/night)</string>
+    <string name="settings_units">Units</string>
+    <string name="settings_units_metric">Metric (km/h, °C)</string>
+    <string name="settings_units_imperial">Imperial (mph, °F)</string>
+    <string name="settings_interval">Adapter polling interval</string>
+    <string name="settings_autoconnect">Auto-connect</string>
+    <string name="settings_about">About</string>
+
+    <!-- Trips -->
+    <string name="trips_title">Trips</string>
+    <string name="tab_trips">Trips</string>
+
+    <!-- Trip Screen -->
+    <string name="trips_map_empty">No data to display the track</string>
+    <string name="trips_recording_title">Trip recording is in progress</string>
+    <string name="trips_all_title">All trips</string>
+    <string name="trips_count_fmt">Total: %1$d</string>
+    <string name="trips_empty">There are no trips yet</string>
+    <string name="trips_delete_title">Delete trip?</string>
+    <string name="trips_delete_message">The trip from %1$s will be deleted along with the track. This action cannot be undone.</string>
+    <string name="trips_delete_confirm">Delete</string>
+    <string name="trips_delete_cancel">Cancel</string>
+    <string name="trips_metric_avg">Avg.</string>
+    <string name="trips_metric_max">Max.</string>
+
+    <!-- Notification service for recording -->
+    <string name="trip_notification_title">Trip recording</string>
+    <string name="trip_notification_text">CarPulse is recording the route</string>
+    <string name="trip_notification_stop">Stop</string>
+    <string name="trip_channel_name">Trip recording</string>
+    <string name="trip_channel_desc">Notification about background route recording</string>
+</resources>
