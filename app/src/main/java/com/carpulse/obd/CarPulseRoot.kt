@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,7 +25,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
@@ -40,6 +40,7 @@ import com.carpulse.obd.ui.fuel.FuelStatsScreen
 import com.carpulse.obd.ui.live.LiveDataScreen
 import com.carpulse.obd.ui.navigation.MainNavItems
 import com.carpulse.obd.ui.navigation.Routes
+import com.carpulse.obd.ui.profile.CarProfileScreen
 import com.carpulse.obd.ui.settings.SettingsScreen
 import com.carpulse.obd.ui.trips.TripsScreen
 import com.carpulse.obd.ui.vehicle.VehicleScreen
@@ -57,6 +58,7 @@ fun CarPulseRoot(vm: AppViewModel) {
         Routes.CONNECTION -> stringResource(R.string.tab_connection)
         Routes.ERRORS -> stringResource(R.string.tab_errors)
         Routes.TRIPS -> stringResource(R.string.tab_trips)
+        Routes.PROFILE -> stringResource(R.string.tab_profile)
         else -> currentItem?.let { stringResource(it.labelRes) }
             ?: stringResource(R.string.app_name)
     }
@@ -134,6 +136,22 @@ fun CarPulseRoot(vm: AppViewModel) {
                         )
                     }
 
+                    // ---- Профиль автомобиля ----
+                    IconButton(
+                        onClick = {
+                            if (currentRoute != Routes.PROFILE) {
+                                nav.navigate(Routes.PROFILE) {
+                                    launchSingleTop = true
+                                }
+                            }
+                        }
+                    ) {
+                        Icon(
+                            Icons.Filled.DirectionsCar,
+                            contentDescription = stringResource(R.string.tab_profile)
+                        )
+                    }
+
                     // ---- Настройки ----
                     IconButton(
                         onClick = {
@@ -192,8 +210,9 @@ fun CarPulseRoot(vm: AppViewModel) {
             composable(Routes.VEHICLE)    { VehicleScreen(vm) }
             composable(Routes.CONNECTION) { ConnectionScreen(vm) }
             composable(Routes.SETTINGS)   { SettingsScreen(vm) }
+            composable(Routes.PROFILE)    { CarProfileScreen() }
 
-            // TODO: вернуть, когда PaywallScreen будет  создан.
+            // TODO: вернуть, когда PaywallScreen будет создан.
             // Пока экран paywall отключён, чтобы проект собирался.
             //
             // composable("paywall") {

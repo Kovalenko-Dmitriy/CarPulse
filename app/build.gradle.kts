@@ -1,7 +1,8 @@
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.plugin.compose")
-    id("com.google.devtools.ksp")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -54,11 +55,7 @@ kotlin {
     }
 }
 
-
-
 dependencies {
-
-
     // --- AndroidX core ---
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
@@ -73,9 +70,9 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
 
     // --- Lifecycle / ViewModel / Navigation ---
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
-    implementation("androidx.navigation:navigation-compose:2.8.0")
+    implementation("androidx.navigation:navigation-compose:2.8.5")
 
     // --- DataStore (настройки) ---
     implementation("androidx.datastore:datastore-preferences:1.1.1")
@@ -85,14 +82,13 @@ dependencies {
     implementation("androidx.room:room-ktx:2.7.0-alpha11")
     ksp("androidx.room:room-compiler:2.7.0-alpha11")
 
-
     // --- Gson (импорт obdex_all.json) ---
     implementation("com.google.code.gson:gson:2.10.1")
 
     // --- Coroutines ---
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
-    // --- Location (FusedLocationProvider — ключей не требует) ---
+    // --- Location (FusedLocationProvider) ---
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
     // --- Maps: osmdroid (OpenStreetMap, без API-ключа) ---
@@ -100,6 +96,9 @@ dependencies {
 
     // --- Preferences (нужен для инициализации osmdroid) ---
     implementation("androidx.preference:preference-ktx:1.2.1")
+
+    // --- Биллинг ---
+    implementation("com.android.billingclient:billing-ktx:6.2.1")
 
     // --- Tests ---
     testImplementation("junit:junit:4.13.2")
@@ -111,17 +110,15 @@ dependencies {
     // --- Debug ---
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+}
 
-    // OpenStreetMap
-    implementation("org.osmdroid:osmdroid-android:6.1.18")
-
-    // Биллинг
-    implementation("com.android.billingclient:billing-ktx:6.2.1")
-
-    // DataStore для хранения статуса Pro
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
-
-    // (уже должно быть)
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
-    implementation("androidx.navigation:navigation-compose:2.8.5")
+// Настройка вывода тестов. БЕЗ standard_out/standard_error —
+// они вызывают Broken pipe при большом объёме println в тестах.
+tasks.withType<Test> {
+    testLogging {
+        events("passed", "failed", "skipped")
+        showExceptions = true
+        showStackTraces = true
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
 }

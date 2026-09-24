@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="profile_section_vin">VIN-Identifikation</string>
     <string name="profile_vin_label">FIN</string>
@@ -46,7 +46,6 @@
     <string name="unit_kpa">kPa</string>
     <string name="unit_grams_per_sec">g/s</string>
     <string name="unit_rpm">U/min</string>
-    <string name="unit_kmh">km/h</string>
     <string name="unit_degree">°</string>
     <string name="unit_volt">V</string>
     <string name="unit_km">km</string>
@@ -132,4 +131,31 @@
     <string name="fuel_type_lpg">Autogas (LPG)</string>
     <string name="fuel_type_cng">Erdgas (CNG)</string>
     <string name="fuel_type_e85">Ethanol E85</string>
+
+    <string name="profile_ecu_section">Erkanntes Steuergerät</string>
+    <string name="profile_ecu_standard_obd">Standard-OBD-II (Steuergerät nicht erkannt)</string>
+    <string name="profile_ecu_fallback_hint">Füllen Sie Marke, Modell und Baujahr aus — die App versucht, das Steuergerät automatisch zu erkennen.</string>
+    <string name="profile_ecu_protocol_fmt">%1$s · %2$s</string>
+    <string name="profile_ecu_years_fmt">Baujahre: %1$s</string>
+    <string name="profile_ecu_alternatives_fmt">Weitere Optionen (%1$d)</string>
+
+    <string name="profile_ecu_confidence_exact">genaue Übereinstimmung</string>
+    <string name="profile_ecu_confidence_partial">teilweise Übereinstimmung</string>
+    <string name="profile_ecu_confidence_make_only">nur Marke</string>
+    <string name="profile_ecu_confidence_fallback">nicht erkannt</string>
+
+    <string name="tab_profile">Fahrzeugprofil</string>
+
+    <!-- ====================== Identifikation: FIN / Karosserienummer ====================== -->
+    <string name="profile_id_mode_vin">FIN</string>
+    <string name="profile_id_mode_body">Karosserienummer</string>
+
+    <string name="profile_section_body">Identifikation nach Karosserienummer</string>
+    <string name="profile_body_hint">Für ältere Lada/GAZ/UAZ, JDM-Importe und LKW. Marke, Modell und Baujahr manuell eingeben.</string>
+    <string name="profile_body_label">Karosserie-/Fahrgestellnummer</string>
+    <string name="profile_body_placeholder">Beispiel: 2107001234567 oder EU11030002</string>
+
+    <string name="profile_body_hint_switch">Das sieht nach einer Karosserienummer aus, nicht nach FIN. Wechseln?</string>
+    <string name="profile_body_switch">Wechseln</string>
+    <string name="profile_body_ignore">Nein, es ist FIN</string>
 </resources>

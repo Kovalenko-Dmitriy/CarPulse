@@ -4,12 +4,16 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carpulse.obd.data.profile.CarProfileRepository
+import com.carpulse.obd.domain.ecu.EcuResolutionResult
+import com.carpulse.obd.domain.ecu.EcuResolver
 import com.carpulse.obd.domain.profile.CarProfile
 import com.carpulse.obd.domain.profile.Region
 import com.carpulse.obd.domain.units.UnitSystem
 import com.carpulse.obd.domain.vin.VinDecodeResult
 import com.carpulse.obd.domain.vin.VinDecoder
+import com.carpulse.obd.domain.vin.VinKind
 import com.carpulse.obd.domain.vin.VinValidation
+import com.carpulse.obd.domain.vin.VinValidator
 import com.carpulse.obd.domain.vin.applyTo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -23,6 +27,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
@@ -33,9 +38,9 @@ data class CarProfileUiState(
     val isDecoding: Boolean = false,
     val isSaving: Boolean = false,
     val vinValidation: VinValidation? = null,
-) {
-    val hasUnsavedChanges: Boolean get() = isSaving
-}
+    val ecuResolution: EcuResolutionResult? = null,
+    val vinKind: VinKind = VinKind.UNKNOWN,
+)
 
 sealed interface CarProfileEvent {
     data class ShowError(val messageRes: Int) : CarProfileEvent
@@ -46,6 +51,7 @@ sealed interface CarProfileEvent {
 class CarProfileViewModel(
     private val decoder: VinDecoder,
     private val profileRepo: CarProfileRepository,
+    private val ecuResolver: EcuResolver,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(CarProfileUiState())
@@ -59,25 +65,32 @@ class CarProfileViewModel(
 
     private var vinDebounceJob: Job? = null
     private var saveDebounceJob: Job? = null
+    private var resolveJob: Job? = null
 
     init {
-        // Подписка на реактивный поток профиля из DataStore.
-        //
-        // catch здесь — второй эшелон защиты: repository уже обработал
-        // IOException и отдал дефолт. Сюда попадают только неожиданные
-        // исключения (например, ошибка парсинга enum). Логируем и
-        // завершаем поток — не роняем корутину.
+        viewModelScope.launch {
+            val saved = profileRepo.load()
+            _state.update {
+                it.copy(
+                    profile = saved,
+                    vinKind = when {
+                        saved.vin != null -> VinValidator.classify(saved.vin)
+                        saved.bodyNumber != null -> VinKind.BODY
+                        else -> VinKind.UNKNOWN
+                    },
+                )
+            }
+            resolveEcu(saved)
+        }
+
         profileRepo.profileFlow
             .onEach { saved ->
-                // Не перезаписываем стейт, пока идёт запись или декодирование.
-                // Иначе результат save() вернётся и затрёт введённый VIN.
                 if (!_state.value.isSaving && !_state.value.isDecoding) {
                     _state.value = _state.value.copy(profile = saved)
                 }
             }
             .catch { e ->
                 Log.e(TAG, "Неожиданная ошибка в profileFlow", e)
-                // Намеренно ничего не эмитим — поток просто завершается.
             }
             .launchIn(viewModelScope)
     }
@@ -89,15 +102,30 @@ class CarProfileViewModel(
     fun onVinEntered(rawVin: String, overwriteExisting: Boolean = false) {
         val trimmed = rawVin.trim().uppercase()
 
-        val validation = if (trimmed.isEmpty()) null else VinValidatorHolder.validate(trimmed)
+        val kind = if (trimmed.isEmpty()) VinKind.UNKNOWN
+                   else VinValidator.classify(trimmed)
+        val validation = if (trimmed.isEmpty()) null
+                         else VinValidator.validate(trimmed)
+
         _state.value = _state.value.copy(
-            profile = _state.value.profile.copy(vin = trimmed.ifEmpty { null }),
+            profile = _state.value.profile.copy(
+                vin = trimmed.ifEmpty { null },
+                bodyNumber = null,   // VIN и номер кузова — взаимоисключающие
+            ),
             vinValidation = validation,
+            vinKind = kind,
         )
 
         vinDebounceJob?.cancel()
 
         if (trimmed.isEmpty()) {
+            _state.value = _state.value.copy(lastDecode = null, isDecoding = false)
+            return
+        }
+
+        // Если это не похоже на VIN (например, JDM-номер или ВАЗ-номер кузова),
+        // не пытаемся декодировать — пользователь сам заполнит марку/год.
+        if (kind != VinKind.VIN) {
             _state.value = _state.value.copy(lastDecode = null, isDecoding = false)
             return
         }
@@ -123,6 +151,7 @@ class CarProfileViewModel(
             )
 
             persistProfile(updatedProfile)
+            resolveEcu(updatedProfile)
         }
     }
 
@@ -134,10 +163,34 @@ class CarProfileViewModel(
         )
         _state.value = _state.value.copy(profile = updated)
 
-        // persistProfile — suspend, поэтому оборачиваем в корутину.
         viewModelScope.launch {
             persistProfile(updated)
+            resolveEcu(updated)
         }
+    }
+
+    /**
+     * Пользователь ввёл номер кузова вместо VIN.
+     *
+     * Не пытаемся декодировать — сохраняем как есть. Марка, модель и год
+     * заполняются вручную в блоке «Параметры автомобиля».
+     */
+    fun onBodyNumberEntered(raw: String) {
+        val trimmed = raw.trim().uppercase()
+
+        _state.update {
+            it.copy(
+                profile = it.profile.copy(
+                    bodyNumber = trimmed.ifEmpty { null },
+                    vin = null,       // взаимоисключающие поля
+                ),
+                lastDecode = null,
+                vinValidation = null,
+                vinKind = if (trimmed.isEmpty()) VinKind.UNKNOWN else VinKind.BODY,
+            )
+        }
+
+        scheduleSave(_state.value.profile)
     }
 
     // ====================================================================
@@ -159,9 +212,6 @@ class CarProfileViewModel(
     }
 
     fun onRegionChanged(region: Region) {
-        // Смена региона НЕ трогает unitSystemOverride: пользователь мог
-        // явно выбрать метрику для японской машины. Если override == null,
-        // effectiveUnitSystem пересчитается автоматически.
         updateProfile(_state.value.profile.copy(region = region))
     }
 
@@ -170,11 +220,13 @@ class CarProfileViewModel(
     }
 
     fun onEcuSelected(ecuId: String?) {
-        updateProfile(_state.value.profile.copy(ecuId = ecuId))
+        val updated = _state.value.profile.copy(ecuId = ecuId)
+        _state.value = _state.value.copy(profile = updated)
+        viewModelScope.launch { persistProfile(updated) }
     }
 
     // ====================================================================
-    // Очистка профиля
+    // Очистка
     // ====================================================================
 
     fun clearProfile() {
@@ -194,8 +246,16 @@ class CarProfileViewModel(
     // ====================================================================
 
     private fun updateProfile(newProfile: CarProfile) {
+        val old = _state.value.profile
         _state.value = _state.value.copy(profile = newProfile)
         scheduleSave(newProfile)
+
+        if (old.make != newProfile.make ||
+            old.model != newProfile.model ||
+            old.year != newProfile.year
+        ) {
+            resolveEcu(newProfile)
+        }
     }
 
     private fun scheduleSave(profile: CarProfile) {
@@ -217,16 +277,34 @@ class CarProfileViewModel(
         }
     }
 
+    /**
+     * Пересчитывает ECU-резолюцию для текущего профиля.
+     *
+     * НЕ перезаписывает выбор пользователя: если profile.ecuId уже
+     * задан (пользователь выбрал ЭБУ вручную), резолвер не вызывается.
+     *
+     * Debounce 200 мс — на случай, если пользователь печатает марку/модель.
+     */
+    private fun resolveEcu(profile: CarProfile) {
+        if (profile.ecuId != null) return
+
+        resolveJob?.cancel()
+        resolveJob = viewModelScope.launch {
+            delay(RESOLVE_DEBOUNCE_MS)
+            val result = withContext(Dispatchers.Default) {
+                ecuResolver.resolve(profile)
+            }
+            _state.update { it.copy(ecuResolution = result) }
+        }
+    }
+
     companion object {
         private const val TAG = "CarProfileViewModel"
         private const val VIN_DEBOUNCE_MS = 500L
         private const val SAVE_DEBOUNCE_MS = 300L
+        private const val RESOLVE_DEBOUNCE_MS = 200L
         private const val MIN_YEAR = 1950
         private const val MAX_YEAR = 2100
         private const val ERROR_SAVE_FAILED = com.carpulse.obd.R.string.error_profile_save_failed
     }
-}
-
-private object VinValidatorHolder {
-    fun validate(vin: String) = com.carpulse.obd.domain.vin.VinValidator.validate(vin)
 }

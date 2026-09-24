@@ -3,25 +3,23 @@ package com.carpulse.obd.ui.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.carpulse.obd.data.profile.CarProfileRepository
-import com.carpulse.obd.domain.vin.VdsLookup
+import com.carpulse.obd.domain.ecu.EcuResolver
 import com.carpulse.obd.domain.vin.VinDecoder
-import com.carpulse.obd.domain.vin.WmiDatabase
 
 /**
  * Фабрика ViewModel без DI-фреймворка.
  *
- * Экземпляр CarProfileRepository передаётся снаружи (из CarPulseApp) —
- * чтобы DataStore не открывался повторно при каждой навигации на экран профиля.
+ * Все зависимости передаются снаружи (из CarPulseApp) — чтобы DataStore
+ * и базы JSON не открывались повторно при каждой навигации на экран.
  *
- * Если у вас появится Hilt/Koin — эта фабрика заменяется на @HiltViewModel
- * без изменения самого CarProfileViewModel (он не знает о фабрике).
+ * @param profileRepo репозиторий профиля (DataStore).
+ * @param decoder     декодер VIN.
+ * @param ecuResolver резолвер ЭБУ.
  */
 class CarProfileViewModelFactory(
     private val profileRepo: CarProfileRepository,
-    private val decoder: VinDecoder = VinDecoder(
-        wmiDb = WmiDatabase,
-        vdsLookup = VdsLookup.Empty,
-    ),
+    private val decoder: VinDecoder,
+    private val ecuResolver: EcuResolver,
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
@@ -32,6 +30,7 @@ class CarProfileViewModelFactory(
         return CarProfileViewModel(
             decoder = decoder,
             profileRepo = profileRepo,
+            ecuResolver = ecuResolver,
         ) as T
     }
 }

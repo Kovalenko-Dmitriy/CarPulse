@@ -22,9 +22,8 @@ import java.io.IOException as JavaIOException
 /**
  * Единый DataStore для профиля автомобиля.
  *
- * Делегат `preferencesDataStore` обязан быть объявлен на верхнем уровне файла
- * (не внутри класса) — это требование API. Имя "car_profile" определяет
- * имя файла на диске: /data/data/com.carpulse.obd/files/datastore/car_profile.preferences_pb
+ * Делегат `preferencesDataStore` объявлен на верхнем уровне файла
+ * (не внутри класса) — это требование API.
  */
 private val Context.carProfileDataStore: DataStore<Preferences> by preferencesDataStore(
     name = "car_profile",
@@ -33,15 +32,7 @@ private val Context.carProfileDataStore: DataStore<Preferences> by preferencesDa
 /**
  * Репозиторий профиля автомобиля.
  *
- * Реализует MVVM-контракт: ViewModel не знает о DataStore, работает только
- * с доменными типами CarProfile / Region / UnitSystem.
- *
- * Потокобезопасность: все методы suspend, DataStore сам сериализует доступ.
- * Экземпляр должен быть один на приложение (см. CarPulseApp).
- *
- * Обработка ошибок:
- *  - чтение: при IOException возвращаем пустой профиль, логируем;
- *  - запись: пробрасываем IOException наверх — ViewModel покажет Snackbar.
+ * @param context application context — DataStore привязывается к нему.
  */
 class CarProfileRepository(
     private val context: Context,
@@ -49,6 +40,7 @@ class CarProfileRepository(
 
     private object Keys {
         val VIN = stringPreferencesKey("vin")
+        val BODY_NUMBER = stringPreferencesKey("body_number")
         val MAKE = stringPreferencesKey("make")
         val MODEL = stringPreferencesKey("model")
         val YEAR = intPreferencesKey("year")
@@ -61,13 +53,11 @@ class CarProfileRepository(
      * Реактивный поток профиля. UI подписывается один раз и получает
      * обновления автоматически при любом save().
      *
-     * При ошибке чтения (повреждённый файл, нет доступа) — отдаём дефолт
-     * и логируем. Не бросаем исключение, чтобы не убить корутину-коллектор.
+     * При ошибке чтения — отдаём дефолт и логируем. Не бросаем
+     * исключение, чтобы не убить корутину-коллектор.
      */
     val profileFlow: Flow<CarProfile> = context.carProfileDataStore.data
         .catch { throwable ->
-            // DataStore кидает IOException (androidx.datastore.core.IOException)
-            // при повреждении файла. Логируем и отдаём пустые настройки.
             if (throwable is IOException || throwable is JavaIOException) {
                 Log.e(TAG, "Ошибка чтения DataStore, отдаём пустой профиль", throwable)
                 emit(emptyPreferences())
@@ -78,16 +68,14 @@ class CarProfileRepository(
         .map { prefs -> prefs.toCarProfile() }
 
     /**
-     * Однократное чтение — для мест, где не нужен реактивный поток
-     * (например, при инициализации сервиса).
+     * Однократное чтение.
      */
     suspend fun load(): CarProfile = profileFlow.first()
 
     /**
-     * Сохранение профиля. Атомарно (DataStore.edit — транзакция).
+     * Сохранение профиля. Атомарно через DataStore.edit.
      *
      * @throws IOException если запись не удалась (диск полон, нет прав).
-     *         ViewModel обязана обработать и показать пользователю.
      */
     suspend fun save(profile: CarProfile) {
         try {
@@ -95,6 +83,10 @@ class CarProfileRepository(
                 profile.vin?.takeIf { it.isNotBlank() }
                     ?.let { prefs[Keys.VIN] = it }
                     ?: prefs.remove(Keys.VIN)
+
+                profile.bodyNumber?.takeIf { it.isNotBlank() }
+                    ?.let { prefs[Keys.BODY_NUMBER] = it }
+                    ?: prefs.remove(Keys.BODY_NUMBER)
 
                 profile.make?.takeIf { it.isNotBlank() }
                     ?.let { prefs[Keys.MAKE] = it }
@@ -123,7 +115,7 @@ class CarProfileRepository(
     }
 
     /**
-     * Сброс профиля в дефолт. Нужен для кнопки «Забыть автомобиль».
+     * Сброс профиля. Нужен для кнопки «Забыть автомобиль».
      */
     suspend fun clear() {
         context.carProfileDataStore.edit { it.clear() }
@@ -133,6 +125,7 @@ class CarProfileRepository(
 
     private fun Preferences.toCarProfile(): CarProfile = CarProfile(
         vin = this[Keys.VIN],
+        bodyNumber = this[Keys.BODY_NUMBER],
         make = this[Keys.MAKE],
         model = this[Keys.MODEL],
         year = this[Keys.YEAR],
@@ -146,12 +139,9 @@ class CarProfileRepository(
     /**
      * Безопасный парсинг enum из строки.
      *
-     * ВАЖНО: сохраняем через .name, а не ordinal. Если в будущем добавим
-     * новое значение в Region (например, Region.AFRICA), старые записи
-     * продолжат читаться корректно. С ordinal — «съехали» бы.
-     *
-     * Если значение в файле устарело/битое — возвращаем fallback,
-     * а не падаем с IllegalArgumentException.
+     * ВАЖНО: сохраняем через .name, а не ordinal. Если в будущем
+     * добавим новое значение в Region — старые записи продолжат
+     * читаться корректно.
      */
     private inline fun <reified T : Enum<T>> parseEnum(raw: String?, fallback: T): T =
         raw?.let { runCatching { enumValueOf<T>(it) }.getOrNull() } ?: fallback

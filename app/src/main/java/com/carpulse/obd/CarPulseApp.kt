@@ -2,18 +2,21 @@ package com.carpulse.obd
 
 import android.app.Application
 import android.util.Log
-import androidx.preference.PreferenceManager
 import com.carpulse.obd.data.billing.BillingManager
 import com.carpulse.obd.data.db.AppDatabase
+import com.carpulse.obd.data.ecu.EcuJsonLoader
 import com.carpulse.obd.data.prefs.SettingsStore
 import com.carpulse.obd.data.prefs.UserPreferences
 import com.carpulse.obd.data.profile.CarProfileRepository
 import com.carpulse.obd.domain.FeatureGate
 import com.carpulse.obd.domain.ObdManager
 import com.carpulse.obd.domain.TripRepository
+import com.carpulse.obd.domain.ecu.EcuDatabase
+import com.carpulse.obd.domain.ecu.EcuResolver
 import com.carpulse.obd.domain.vin.VdsLookup
 import com.carpulse.obd.domain.vin.VinDecoder
 import com.carpulse.obd.domain.vin.WmiDatabase
+import com.carpulse.obd.domain.vin.WmiJsonLoader
 import com.carpulse.obd.ui.trips.TripController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,11 +24,12 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import org.osmdroid.config.Configuration
 import java.io.File
-
+import com.carpulse.obd.domain.vin.VdsDatabase
+import com.carpulse.obd.domain.vin.VdsJsonLoader
 class CarPulseApp : Application() {
 
     // ========================================================================
-    // Существующие зависимости (сохранены без изменений)
+    // Существующие зависимости
     // ========================================================================
     lateinit var obd: ObdManager
     lateinit var trips: TripRepository
@@ -35,7 +39,7 @@ class CarPulseApp : Application() {
     lateinit var featureGate: FeatureGate
 
     // ========================================================================
-    // Новые зависимости: профиль автомобиля + VIN-декодер
+    // Профиль автомобиля + VIN-декодер
     // ========================================================================
 
     /**
@@ -52,17 +56,40 @@ class CarPulseApp : Application() {
     }
 
     /**
-     * Декодер VIN (чистая доменная логика, без Android-зависимостей).
+     * Декодер VIN.
      *
-     * Один на приложение: внутри нет изменяемого состояния, но
-     * конструирование WmiDatabase сортирует список — незачем это
-     * делать при каждом создании ViewModel.
+     * WMI-база загружается из assets/vin_wmi.json при первом обращении
+     * к декодеру — то есть при открытии экрана профиля, а не при старте.
+     * Это ускоряет холодный старт и экономит память, если профиль
+     * не используется.
      */
     val vinDecoder: VinDecoder by lazy {
         VinDecoder(
-            wmiDb = WmiDatabase,
-            vdsLookup = VdsLookup.Empty,
+            wmiDb = WmiDatabase(WmiJsonLoader(this).load()),
+            vdsLookup = VdsLookup.Database(VdsDatabase(VdsJsonLoader(this).load())),
         )
+    }
+
+    // ========================================================================
+    // База ЭБУ
+    // ========================================================================
+
+    /**
+     * База ЭБУ. Загружается из assets/ecu_database.json лениво.
+     *
+     * При ошибке парсинга возвращается пустая база — приложение
+     * продолжит работать через OBD2_STANDARD (см. EcuJsonLoader).
+     */
+    val ecuDatabase: EcuDatabase by lazy {
+        EcuDatabase(EcuJsonLoader(this).load())
+    }
+
+    /**
+     * Резолвер ЭБУ. Работает поверх ecuDatabase.
+     * Чистая доменная логика, без Android-зависимостей.
+     */
+    val ecuResolver: EcuResolver by lazy {
+        EcuResolver(ecuDatabase)
     }
 
     // ========================================================================
@@ -133,12 +160,10 @@ class CarPulseApp : Application() {
 
     companion object {
         /**
-         * Глобальный доступ для фабрик ViewModel, которым нужны
-         * carProfileRepository и vinDecoder.
+         * Глобальный доступ для фабрик ViewModel.
          *
-         * Альтернатива — использовать viewModelFactory { initializer { ... } }
-         * в Compose, но глобальная ссылка проще и не тянет
-         * lifecycle-viewmodel-compose в каждый экран.
+         * Даёт доступ к carProfileRepository, vinDecoder, ecuResolver
+         * без проброса через конструкторы Composables.
          */
         lateinit var instance: CarPulseApp
             private set

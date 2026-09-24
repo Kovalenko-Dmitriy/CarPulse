@@ -12,12 +12,11 @@ sealed interface VinValidation {
 }
 
 /**
- * Проверка формата VIN.
+ * Проверка формата VIN и классификация идентификатора.
  *
  * Контрольная сумма (9-й символ) — стандарт FMVSS 115 — обязательна
  * только для североамериканских VIN. Для европейских/азиатских её
- * проверять НЕЛЬЗЯ: там 9-й символ может быть любым (у VW — это 'Z',
- * у многих — просто часть серийного номера).
+ * проверять НЕЛЬЗЯ: там 9-й символ может быть любым.
  */
 object VinValidator {
 
@@ -31,6 +30,9 @@ object VinValidator {
     )
     private val WEIGHTS = intArrayOf(8, 7, 6, 5, 4, 3, 2, 10, 0, 9, 8, 7, 6, 5, 4, 3, 2)
 
+    /**
+     * Проверка формата VIN: ровно 17 символов, без I/O/Q.
+     */
     fun validate(vin: String): VinValidation {
         val v = vin.trim().uppercase()
         if (v.isEmpty()) {
@@ -40,7 +42,42 @@ object VinValidator {
         if (v.length != VIN_LENGTH) reasons += VinValidation.Reason.WRONG_LENGTH
         if (!ALLOWED.matches(v)) reasons += VinValidation.Reason.ILLEGAL_CHARS
         return if (reasons.isEmpty()) VinValidation.Valid
-        else VinValidation.Invalid(reasons)
+               else VinValidation.Invalid(reasons)
+    }
+
+    /**
+     * Классификация идентификатора.
+     *
+     * Правила:
+     *  - 17 символов + без запрещённых I/O/Q → VIN
+     *  - 13–14 цифр → номер кузова ВАЗ/ГАЗ/УАЗ
+     *  - буквы + цифры + дефис, 8–14 символов → японский 車台番号
+     *  - 17 символов, но с недопустимыми символами → BODY (номер рамы)
+     *  - иначе → UNKNOWN
+     */
+    fun classify(raw: String): VinKind {
+        val v = raw.trim().uppercase()
+        if (v.isEmpty()) return VinKind.UNKNOWN
+
+        // Чистый VIN
+        if (v.length == VIN_LENGTH && ALLOWED.matches(v)) return VinKind.VIN
+
+        // 13–14 цифр — номер кузова ВАЗ/ГАЗ/УАЗ
+        if (v.length in 13..14 && v.all { it.isDigit() }) return VinKind.BODY
+
+        // Японский 車台番号: буквы+цифры, дефис, 8–14 символов
+        if (v.length in 8..14 &&
+            v.any { it.isLetter() } &&
+            v.any { it.isDigit() } &&
+            v.all { it.isLetterOrDigit() || it == '-' }
+        ) {
+            return VinKind.BODY
+        }
+
+        // 17 символов, но с I/O/Q или другими символами — номер рамы грузовика
+        if (v.length == VIN_LENGTH) return VinKind.BODY
+
+        return VinKind.UNKNOWN
     }
 
     /**

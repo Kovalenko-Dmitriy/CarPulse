@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">CarPulse</string>
 
@@ -293,4 +293,32 @@
     <string name="fuel_type_lpg">Газ (LPG)</string>
     <string name="fuel_type_cng">Метан (CNG)</string>
     <string name="fuel_type_e85">Этанол E85</string>
+
+    <!-- ====================== Определение ЭБУ ====================== -->
+    <string name="profile_ecu_section">Определённый ЭБУ</string>
+    <string name="profile_ecu_standard_obd">Стандартный OBD-II (ЭБУ не определён)</string>
+    <string name="profile_ecu_fallback_hint">Заполните марку, модель и год — приложение попробует определить ЭБУ автоматически.</string>
+    <string name="profile_ecu_protocol_fmt">%1$s · %2$s</string>
+    <string name="profile_ecu_years_fmt">Годы выпуска: %1$s</string>
+    <string name="profile_ecu_alternatives_fmt">Другие варианты (%1$d)</string>
+
+    <string name="profile_ecu_confidence_exact">точное совпадение</string>
+    <string name="profile_ecu_confidence_partial">частичное совпадение</string>
+    <string name="profile_ecu_confidence_make_only">только марка</string>
+    <string name="profile_ecu_confidence_fallback">не определено</string>
+
+    <string name="tab_profile">Профиль автомобиля</string>
+
+    <!-- ====================== Идентификация: VIN / Номер кузова ====================== -->
+    <string name="profile_id_mode_vin">VIN</string>
+    <string name="profile_id_mode_body">Номер кузова</string>
+
+    <string name="profile_section_body">Идентификация по номеру кузова</string>
+    <string name="profile_body_hint">Для старых ВАЗ/ГАЗ/УАЗ, японских JDM и грузовиков. Марку, модель и год заполните вручную.</string>
+    <string name="profile_body_label">Номер кузова / шасси</string>
+    <string name="profile_body_placeholder">Например: 2107001234567 или EU11030002</string>
+
+    <string name="profile_body_hint_switch">Похоже, это номер кузова, а не VIN. Переключиться?</string>
+    <string name="profile_body_switch">Переключиться</string>
+    <string name="profile_body_ignore">Нет, это VIN</string>
 </resources>

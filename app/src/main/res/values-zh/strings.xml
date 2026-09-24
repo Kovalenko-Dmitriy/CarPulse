@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="profile_section_vin">VIN 识别</string>
     <string name="profile_vin_label">VIN</string>
@@ -46,7 +46,6 @@
     <string name="unit_kpa">kPa</string>
     <string name="unit_grams_per_sec">g/s</string>
     <string name="unit_rpm">rpm</string>
-    <string name="unit_kmh">km/h</string>
     <string name="unit_degree">°</string>
     <string name="unit_volt">V</string>
     <string name="unit_km">km</string>
@@ -132,4 +131,31 @@
     <string name="fuel_type_lpg">LPG</string>
     <string name="fuel_type_cng">CNG</string>
     <string name="fuel_type_e85">乙醇 E85</string>
+
+    <string name="profile_ecu_section">已识别的 ECU</string>
+    <string name="profile_ecu_standard_obd">标准 OBD-II（未识别 ECU）</string>
+    <string name="profile_ecu_fallback_hint">请填写品牌、车型和年份 — 应用将尝试自动识别 ECU。</string>
+    <string name="profile_ecu_protocol_fmt">%1$s · %2$s</string>
+    <string name="profile_ecu_years_fmt">生产年份：%1$s</string>
+    <string name="profile_ecu_alternatives_fmt">其他选项 (%1$d)</string>
+
+    <string name="profile_ecu_confidence_exact">完全匹配</string>
+    <string name="profile_ecu_confidence_partial">部分匹配</string>
+    <string name="profile_ecu_confidence_make_only">仅品牌</string>
+    <string name="profile_ecu_confidence_fallback">未识别</string>
+
+    <string name="tab_profile">车辆配置文件</string>
+
+    <!-- ====================== 识别：VIN / 车架号 ====================== -->
+    <string name="profile_id_mode_vin">VIN</string>
+    <string name="profile_id_mode_body">车架号</string>
+
+    <string name="profile_section_body">按车架号识别</string>
+    <string name="profile_body_hint">适用于旧款 Lada/GAZ/UAZ、日本进口车和卡车。请手动填写品牌、车型和年份。</string>
+    <string name="profile_body_label">车架号 / 底盘号</string>
+    <string name="profile_body_placeholder">例如：2107001234567 或 EU11030002</string>
+
+    <string name="profile_body_hint_switch">这看起来像车架号，而不是 VIN。是否切换？</string>
+    <string name="profile_body_switch">切换</string>
+    <string name="profile_body_ignore">不，这是 VIN</string>
 </resources>

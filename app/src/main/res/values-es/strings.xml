@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="profile_section_vin">Identificación por VIN</string>
     <string name="profile_vin_label">VIN</string>
@@ -46,7 +46,6 @@
     <string name="unit_kpa">kPa</string>
     <string name="unit_grams_per_sec">g/s</string>
     <string name="unit_rpm">rpm</string>
-    <string name="unit_kmh">km/h</string>
     <string name="unit_degree">°</string>
     <string name="unit_volt">V</string>
     <string name="unit_km">km</string>
@@ -132,4 +131,31 @@
     <string name="fuel_type_lpg">GLP</string>
     <string name="fuel_type_cng">GNC</string>
     <string name="fuel_type_e85">Etanol E85</string>
+
+    <string name="profile_ecu_section">ECU detectada</string>
+    <string name="profile_ecu_standard_obd">OBD-II estándar (ECU no detectada)</string>
+    <string name="profile_ecu_fallback_hint">Complete la marca, el modelo y el año — la aplicación intentará detectar la ECU automáticamente.</string>
+    <string name="profile_ecu_protocol_fmt">%1$s · %2$s</string>
+    <string name="profile_ecu_years_fmt">Años de producción: %1$s</string>
+    <string name="profile_ecu_alternatives_fmt">Otras opciones (%1$d)</string>
+
+    <string name="profile_ecu_confidence_exact">coincidencia exacta</string>
+    <string name="profile_ecu_confidence_partial">coincidencia parcial</string>
+    <string name="profile_ecu_confidence_make_only">solo marca</string>
+    <string name="profile_ecu_confidence_fallback">no detectada</string>
+
+    <string name="tab_profile">Perfil del vehículo</string>
+
+    <!-- ====================== Identificación: VIN / Número de carrocería ====================== -->
+    <string name="profile_id_mode_vin">VIN</string>
+    <string name="profile_id_mode_body">Número de carrocería</string>
+
+    <string name="profile_section_body">Identificación por número de carrocería</string>
+    <string name="profile_body_hint">Para Lada/GAZ/UAZ antiguos, JDM y camiones. Complete marca, modelo y año manualmente.</string>
+    <string name="profile_body_label">Número de carrocería / chasis</string>
+    <string name="profile_body_placeholder">Ejemplo: 2107001234567 o EU11030002</string>
+
+    <string name="profile_body_hint_switch">Parece un número de carrocería, no un VIN. ¿Cambiar?</string>
+    <string name="profile_body_switch">Cambiar</string>
+    <string name="profile_body_ignore">No, es VIN</string>
 </resources>

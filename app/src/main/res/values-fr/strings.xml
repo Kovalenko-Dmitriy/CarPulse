@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="profile_section_vin">Identification par NIV</string>
     <string name="profile_vin_label">NIV</string>
@@ -46,7 +46,6 @@
     <string name="unit_kpa">kPa</string>
     <string name="unit_grams_per_sec">g/s</string>
     <string name="unit_rpm">tr/min</string>
-    <string name="unit_kmh">km/h</string>
     <string name="unit_degree">°</string>
     <string name="unit_volt">V</string>
     <string name="unit_km">km</string>
@@ -132,4 +131,31 @@
     <string name="fuel_type_lpg">GPL</string>
     <string name="fuel_type_cng">GNV</string>
     <string name="fuel_type_e85">Éthanol E85</string>
+
+    <string name="profile_ecu_section">Calculateur détecté</string>
+    <string name="profile_ecu_standard_obd">OBD-II standard (calculateur non détecté)</string>
+    <string name="profile_ecu_fallback_hint">Renseignez la marque, le modèle et l\'année — l\'application tentera de détecter le calculateur automatiquement.</string>
+    <string name="profile_ecu_protocol_fmt">%1$s · %2$s</string>
+    <string name="profile_ecu_years_fmt">Années de production : %1$s</string>
+    <string name="profile_ecu_alternatives_fmt">Autres options (%1$d)</string>
+
+    <string name="profile_ecu_confidence_exact">correspondance exacte</string>
+    <string name="profile_ecu_confidence_partial">correspondance partielle</string>
+    <string name="profile_ecu_confidence_make_only">marque uniquement</string>
+    <string name="profile_ecu_confidence_fallback">non détecté</string>
+
+    <string name="tab_profile">Profil du véhicule</string>
+
+    <!-- ====================== Identification : NIV / Numéro de caisse ====================== -->
+    <string name="profile_id_mode_vin">NIV</string>
+    <string name="profile_id_mode_body">Numéro de caisse</string>
+
+    <string name="profile_section_body">Identification par numéro de caisse</string>
+    <string name="profile_body_hint">Pour les anciens Lada/GAZ/UAZ, les JDM et les camions. Remplissez la marque, le modèle et l\'année manuellement.</string>
+    <string name="profile_body_label">Numéro de caisse / châssis</string>
+    <string name="profile_body_placeholder">Exemple : 2107001234567 ou EU11030002</string>
+
+    <string name="profile_body_hint_switch">Cela ressemble à un numéro de caisse, pas à un NIV. Changer ?</string>
+    <string name="profile_body_switch">Changer</string>
+    <string name="profile_body_ignore">Non, c\'est un NIV</string>
 </resources>

@@ -13,4 +13,5 @@ object Routes {
     const val CONNECTION = "connection"
     const val SETTINGS = "settings"
     const val TRIPS = "trips"
+    const val PROFILE = "profile"
 }
