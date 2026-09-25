@@ -30,8 +30,19 @@ class ObdRepository(private val client: Elm327Client) {
         // Приборная панель — каждый цикл.
         private val ALWAYS_PIDS = listOf(Pid.RPM, Pid.SPEED, Pid.COOLANT)
 
-        // Периодичность опроса остальных групп.
-        private const val MID_EVERY = 3
+        // ATRV (напряжение АКБ + keep-alive). Адаптивная частота:
+        //   alert (проблема) → раз в 3 цикла  (~1.5 сек)
+        //   норма            → раз в 30 циклов (~15 сек)
+        //
+        // Но если значение становится старше BATTERY_STALE_MS,
+        // ATRV форсируется независимо от счётчика — значение не «исчезает».
+        private const val BATTERY_EVERY_NORMAL = 30
+        private const val BATTERY_EVERY_ALERT = 3
+        private const val BATTERY_LOW_V = 12.5f
+        private const val BATTERY_OK_V = 13.5f
+        private const val BATTERY_STALE_MS = 20000L   // < UI STALE_MS (25 сек)
+
+        // Периодичность опроса остальных supported-PID.
         private const val SLOW_EVERY = 10
 
         private const val CYCLE_DELAY_MS = 500L
@@ -82,6 +93,12 @@ class ObdRepository(private val client: Elm327Client) {
     @Volatile
     private var noDataCycles = 0
 
+    // Адаптивная частота ATRV: начинаем в alert-режиме, чтобы первое
+    // значение получить быстро.
+    @Volatile
+    private var batteryAlert = true
+    private var cyclesSinceBattery = 0
+
     // ============================================================
     // Настройка supported PID
     // ============================================================
@@ -112,7 +129,15 @@ class ObdRepository(private val client: Elm327Client) {
         _noDataMode.value = false
         noDataCycles = 0
 
+        // Сброс адаптивной частоты ATRV.
+        batteryAlert = true
+        cyclesSinceBattery = 0
+
         pollingJob = scope.launch {
+            // ---- Немедленный ATRV: напряжение появляется сразу со всеми
+            //      параметрами, не дожидаясь 3-го цикла. ----
+            refreshBatteryNow()
+
             FileLogger.i("OBD_REPO", "Polling запущен (cycle=${CYCLE_DELAY_MS}ms, interPid=${INTER_PID_DELAY_MS}ms)")
             while (isActive) {
                 try {
@@ -154,6 +179,38 @@ class ObdRepository(private val client: Elm327Client) {
         FileLogger.i("OBD_REPO", "polling остановлен")
     }
 
+    /**
+     * Немедленный опрос ATRV — вне обычной схемы pollOnce.
+     * Используется при старте polling и когда значение устарело.
+     */
+    private suspend fun refreshBatteryNow() {
+        val vResp = client.request("ATRV", 1000)
+        if (vResp == null) return
+        val cleaned = stripEcho("ATRV", vResp)
+        ObdParser.battery(cleaned)?.let { v ->
+            val now = System.currentTimeMillis()
+            _battery.value = TimedValue(v, now)
+            applyBatteryHysteresis(v)
+            FileLogger.d("OBD_REPO", "BATTERY = $v V (immediate)")
+        }
+    }
+
+    private fun applyBatteryHysteresis(v: Float) {
+        val wasAlert = batteryAlert
+        batteryAlert = when {
+            !batteryAlert && v < BATTERY_LOW_V -> true   // вошли в alert
+            batteryAlert && v > BATTERY_OK_V -> false    // вышли из alert
+            else -> batteryAlert                          // зона гистерезиса
+        }
+        if (wasAlert != batteryAlert) {
+            FileLogger.d(
+                "OBD_REPO",
+                if (batteryAlert) "BATTERY режим → alert (частый опрос)"
+                else "BATTERY режим → норма (редкий опрос)"
+            )
+        }
+    }
+
     private enum class PollResult { Data, NoData, Error, Timeout }
 
     private suspend fun pollOnce() {
@@ -177,21 +234,25 @@ class ObdRepository(private val client: Elm327Client) {
             if (result == PollResult.Data) gotAnyData = true
         }
 
-        // 2. BATTERY (ATRV — AT-команда, не OBD)
-        if (cycle % MID_EVERY == 0) {
+        // 2. BATTERY (ATRV): адаптивная частота + форс при устаревании.
+        cyclesSinceBattery++
+        val batt = _battery.value
+        val battStale = batt == null || batt.isStale(BATTERY_STALE_MS)
+        val batteryEvery = if (batteryAlert) BATTERY_EVERY_ALERT else BATTERY_EVERY_NORMAL
+        if (battStale || cyclesSinceBattery >= batteryEvery) {
+            cyclesSinceBattery = 0
             val vResp = client.request("ATRV", 1000)
             if (vResp != null) {
                 val cleaned = stripEcho("ATRV", vResp)
-                ObdParser.battery(cleaned)?.let {
-                    _battery.value = TimedValue(it, now)
-                    FileLogger.d("OBD_REPO", "BATTERY = $it V")
+                ObdParser.battery(cleaned)?.let { v ->
+                    _battery.value = TimedValue(v, now)
+                    applyBatteryHysteresis(v)
+                    FileLogger.d("OBD_REPO", "BATTERY = $v V")
                 }
             }
         }
 
         // 3. Кастомные PID — КАЖДЫЙ ЦИКЛ (приоритет пользователя).
-        //    Раньше было cycle % CUSTOM_EVERY == 0 — раз в 5 циклов.
-        //    Теперь — сразу, чтобы «Свои датчики» обновлялись мгновенно.
         if (customPids.isNotEmpty()) {
             for (pid in customPids) {
                 if (!isPollable(pid)) continue

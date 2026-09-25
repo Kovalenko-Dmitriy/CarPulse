@@ -1,5 +1,6 @@
 package com.carpulse.obd.ui.errors
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -7,9 +8,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.carpulse.obd.AppViewModel
 import com.carpulse.obd.R
@@ -375,14 +377,19 @@ private fun DtcActiveRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp),
+            .clickable { onClick(entity, causes) }
+            .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Компактная карточка кода
         Card(
             colors = CardDefaults.cardColors(containerColor = bg),
-            modifier = Modifier.size(width = 76.dp, height = 52.dp)
+            modifier = Modifier.widthIn(min = 68.dp)
         ) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier.padding(horizontal = 10.dp, vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
                     code,
                     fontFamily = FontFamily.Monospace,
@@ -391,39 +398,54 @@ private fun DtcActiveRow(
                 )
             }
         }
+
         Spacer(Modifier.width(12.dp))
+
+        // Заголовок и метки
         Column(Modifier.weight(1f)) {
             Text(
                 title,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
-            Row {
-                if (mil) {
-                    Text(
-                        stringResource(R.string.errors_mil_yes),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    if (emissions) Spacer(Modifier.width(8.dp))
-                }
-                if (emissions) {
-                    Text(
-                        stringResource(R.string.errors_emissions_yes),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.tertiary
-                    )
+            if (mil || emissions) {
+                Spacer(Modifier.height(2.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (mil) {
+                        Text(
+                            stringResource(R.string.errors_mil_yes),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                            maxLines = 1
+                        )
+                    }
+                    if (mil && emissions) {
+                        Text(
+                            "  •  ",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (emissions) {
+                        Text(
+                            stringResource(R.string.errors_emissions_yes),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
         }
-        TextButton(onClick = { onClick(entity, causes) }) {
-            Text(stringResource(R.string.errors_details))
-        }
+
+        // Стрелка-указатель (вся строка кликабельна)
         Icon(
-            Icons.Filled.Error,
-            contentDescription = null,
-            tint = fg,
-            modifier = Modifier.size(20.dp)
+            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = stringResource(R.string.errors_details),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
