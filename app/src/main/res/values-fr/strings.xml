@@ -158,4 +158,5 @@
     <string name="profile_body_hint_switch">Cela ressemble à un numéro de caisse, pas à un NIV. Changer ?</string>
     <string name="profile_body_switch">Changer</string>
     <string name="profile_body_ignore">Non, c\'est un NIV</string>
+    <string name="profile_jdm_section">Trouvé dans la base JDM</string>
 </resources>

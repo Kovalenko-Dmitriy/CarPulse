@@ -15,6 +15,8 @@ import com.carpulse.obd.domain.vin.VinKind
 import com.carpulse.obd.domain.vin.VinValidation
 import com.carpulse.obd.domain.vin.VinValidator
 import com.carpulse.obd.domain.vin.applyTo
+import com.carpulse.obd.domain.vin.jdm.JdmDecodeResult
+import com.carpulse.obd.domain.vin.jdm.JdmDecoder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -40,6 +42,8 @@ data class CarProfileUiState(
     val vinValidation: VinValidation? = null,
     val ecuResolution: EcuResolutionResult? = null,
     val vinKind: VinKind = VinKind.UNKNOWN,
+    /** Результат декодирования JDM-номера кузова (車台番号). null — не вводили. */
+    val jdmResult: JdmDecodeResult? = null,
 )
 
 sealed interface CarProfileEvent {
@@ -52,6 +56,7 @@ class CarProfileViewModel(
     private val decoder: VinDecoder,
     private val profileRepo: CarProfileRepository,
     private val ecuResolver: EcuResolver,
+    private val jdmDecoder: JdmDecoder,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(CarProfileUiState())
@@ -66,6 +71,7 @@ class CarProfileViewModel(
     private var vinDebounceJob: Job? = null
     private var saveDebounceJob: Job? = null
     private var resolveJob: Job? = null
+    private var jdmDebounceJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -110,10 +116,11 @@ class CarProfileViewModel(
         _state.value = _state.value.copy(
             profile = _state.value.profile.copy(
                 vin = trimmed.ifEmpty { null },
-                bodyNumber = null,   // VIN и номер кузова — взаимоисключающие
+                bodyNumber = null,
             ),
             vinValidation = validation,
             vinKind = kind,
+            jdmResult = null,   // при вводе VIN JDM-результат неактуален
         )
 
         vinDebounceJob?.cancel()
@@ -123,8 +130,6 @@ class CarProfileViewModel(
             return
         }
 
-        // Если это не похоже на VIN (например, JDM-номер или ВАЗ-номер кузова),
-        // не пытаемся декодировать — пользователь сам заполнит марку/год.
         if (kind != VinKind.VIN) {
             _state.value = _state.value.copy(lastDecode = null, isDecoding = false)
             return
@@ -169,11 +174,15 @@ class CarProfileViewModel(
         }
     }
 
+    // ====================================================================
+    // Номер кузова (JDM / ВАЗ / ГАЗ)
+    // ====================================================================
+
     /**
-     * Пользователь ввёл номер кузова вместо VIN.
+     * Пользователь ввёл номер кузова.
      *
-     * Не пытаемся декодировать — сохраняем как есть. Марка, модель и год
-     * заполняются вручную в блоке «Параметры автомобиля».
+     * Пытаемся найти его в JDM-базе (車台番号). Если нашли — показываем
+     * карточку с предложением применить найденные данные.
      */
     fun onBodyNumberEntered(raw: String) {
         val trimmed = raw.trim().uppercase()
@@ -182,15 +191,51 @@ class CarProfileViewModel(
             it.copy(
                 profile = it.profile.copy(
                     bodyNumber = trimmed.ifEmpty { null },
-                    vin = null,       // взаимоисключающие поля
+                    vin = null,
                 ),
                 lastDecode = null,
                 vinValidation = null,
                 vinKind = if (trimmed.isEmpty()) VinKind.UNKNOWN else VinKind.BODY,
+                jdmResult = null,   // сброс, пока не найдём
             )
         }
 
         scheduleSave(_state.value.profile)
+
+        // Ищем в JDM-базе с debounce, чтобы не гонять на каждый символ.
+        jdmDebounceJob?.cancel()
+
+        if (trimmed.length < 3) return
+
+        jdmDebounceJob = viewModelScope.launch {
+            delay(JDM_DEBOUNCE_MS)
+            val result = withContext(Dispatchers.Default) {
+                jdmDecoder.decode(trimmed)
+            }
+            _state.update { it.copy(jdmResult = result) }
+        }
+    }
+
+    /**
+     * Применяет найденную JDM-запись к профилю:
+     * марка, модель, год, регион заполняются автоматически.
+     */
+    fun applyJdmResult() {
+        val jdm = _state.value.jdmResult?.entry ?: return
+
+        val updated = _state.value.profile.copy(
+            make = jdm.make,
+            model = jdm.model,
+            year = jdm.yearFrom,       // берём начало выпуска, пользователь может поправить
+            region = jdm.region,
+        )
+
+        _state.update { it.copy(profile = updated) }
+
+        viewModelScope.launch {
+            persistProfile(updated)
+            resolveEcu(updated)
+        }
     }
 
     // ====================================================================
@@ -277,14 +322,6 @@ class CarProfileViewModel(
         }
     }
 
-    /**
-     * Пересчитывает ECU-резолюцию для текущего профиля.
-     *
-     * НЕ перезаписывает выбор пользователя: если profile.ecuId уже
-     * задан (пользователь выбрал ЭБУ вручную), резолвер не вызывается.
-     *
-     * Debounce 200 мс — на случай, если пользователь печатает марку/модель.
-     */
     private fun resolveEcu(profile: CarProfile) {
         if (profile.ecuId != null) return
 
@@ -303,6 +340,7 @@ class CarProfileViewModel(
         private const val VIN_DEBOUNCE_MS = 500L
         private const val SAVE_DEBOUNCE_MS = 300L
         private const val RESOLVE_DEBOUNCE_MS = 200L
+        private const val JDM_DEBOUNCE_MS = 300L
         private const val MIN_YEAR = 1950
         private const val MAX_YEAR = 2100
         private const val ERROR_SAVE_FAILED = com.carpulse.obd.R.string.error_profile_save_failed

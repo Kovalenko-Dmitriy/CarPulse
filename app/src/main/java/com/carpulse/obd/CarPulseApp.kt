@@ -13,10 +13,15 @@ import com.carpulse.obd.domain.ObdManager
 import com.carpulse.obd.domain.TripRepository
 import com.carpulse.obd.domain.ecu.EcuDatabase
 import com.carpulse.obd.domain.ecu.EcuResolver
+import com.carpulse.obd.domain.vin.VdsDatabase
+import com.carpulse.obd.domain.vin.VdsJsonLoader
 import com.carpulse.obd.domain.vin.VdsLookup
 import com.carpulse.obd.domain.vin.VinDecoder
 import com.carpulse.obd.domain.vin.WmiDatabase
 import com.carpulse.obd.domain.vin.WmiJsonLoader
+import com.carpulse.obd.domain.vin.jdm.JdmDatabase
+import com.carpulse.obd.domain.vin.jdm.JdmDecoder
+import com.carpulse.obd.domain.vin.jdm.JdmJsonLoader
 import com.carpulse.obd.ui.trips.TripController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,8 +29,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import org.osmdroid.config.Configuration
 import java.io.File
-import com.carpulse.obd.domain.vin.VdsDatabase
-import com.carpulse.obd.domain.vin.VdsJsonLoader
+
 class CarPulseApp : Application() {
 
     // ========================================================================
@@ -44,12 +48,6 @@ class CarPulseApp : Application() {
 
     /**
      * Репозиторий профиля автомобиля (DataStore).
-     *
-     * Ленивая инициализация: DataStore откроется при первом обращении,
-     * а не при старте процесса. Это ускоряет холодный старт.
-     *
-     * Экземпляр один на приложение — иначе DataStore откроет файл повторно
-     * и возможны гонки при записи.
      */
     val carProfileRepository: CarProfileRepository by lazy {
         CarProfileRepository(applicationContext)
@@ -58,10 +56,8 @@ class CarPulseApp : Application() {
     /**
      * Декодер VIN.
      *
-     * WMI-база загружается из assets/vin_wmi.json при первом обращении
+     * WMI- и VDS-базы загружаются из assets при первом обращении
      * к декодеру — то есть при открытии экрана профиля, а не при старте.
-     * Это ускоряет холодный старт и экономит память, если профиль
-     * не используется.
      */
     val vinDecoder: VinDecoder by lazy {
         VinDecoder(
@@ -71,14 +67,31 @@ class CarPulseApp : Application() {
     }
 
     // ========================================================================
+    // JDM-декодер (японские номера кузова)
+    // ========================================================================
+
+    /**
+     * JDM-база (車台番号). Загружается лениво из assets/jdm_database.json.
+     * При ошибке парсинга возвращается пустая база.
+     */
+    val jdmDatabase: JdmDatabase by lazy {
+        JdmDatabase(JdmJsonLoader(this).load())
+    }
+
+    /**
+     * Декодер японских номеров кузова. Работает поверх jdmDatabase.
+     * Чистая доменная логика, без Android-зависимостей.
+     */
+    val jdmDecoder: JdmDecoder by lazy {
+        JdmDecoder(jdmDatabase)
+    }
+
+    // ========================================================================
     // База ЭБУ
     // ========================================================================
 
     /**
      * База ЭБУ. Загружается из assets/ecu_database.json лениво.
-     *
-     * При ошибке парсинга возвращается пустая база — приложение
-     * продолжит работать через OBD2_STANDARD (см. EcuJsonLoader).
      */
     val ecuDatabase: EcuDatabase by lazy {
         EcuDatabase(EcuJsonLoader(this).load())
@@ -86,7 +99,6 @@ class CarPulseApp : Application() {
 
     /**
      * Резолвер ЭБУ. Работает поверх ecuDatabase.
-     * Чистая доменная логика, без Android-зависимостей.
      */
     val ecuResolver: EcuResolver by lazy {
         EcuResolver(ecuDatabase)
@@ -112,18 +124,13 @@ class CarPulseApp : Application() {
         // ---- База и доменные сервисы ----
         val db = AppDatabase.get(this)
 
-        // [FIX] ObdManager теперь принимает SettingsStore в конструктор —
-        // нужен для загрузки кэша supportedPids и сохранения detect().
         obd = ObdManager(this, settings)
         trips = TripRepository(db, settings)
-
-        // [FIX D] Передаём TripRepository в ObdManager,
-        // чтобы retryObdInternal() не прерывал активную поездку.
         obd.setTripRepository(trips)
 
         Log.d("CarPulse", "ObdManager создан один раз")
 
-        // ---- osmdroid: user-agent + пути к кешу (один раз на процесс) ----
+        // ---- osmdroid: user-agent + пути к кешу ----
         Configuration.getInstance().userAgentValue = "CarPulse/0.1 ($packageName)"
         val baseDir = getExternalFilesDir(null) ?: filesDir
         val osmCacheDir = File(baseDir, "osmdroid")
@@ -144,10 +151,10 @@ class CarPulseApp : Application() {
             lastMacProvider = { settings.settings.first().lastMac }
         )
 
-        // ---- Автозапуск/остановка трекинга поездок по состоянию OBD ----
+        // ---- Автозапуск/остановка трекинга поездок ----
         TripController(this, obd, settings).startObserving()
 
-        // ---- Инициализация глобальной ссылки для фабрик ViewModel ----
+        // ---- Глобальная ссылка для фабрик ViewModel ----
         instance = this
     }
 
@@ -161,9 +168,6 @@ class CarPulseApp : Application() {
     companion object {
         /**
          * Глобальный доступ для фабрик ViewModel.
-         *
-         * Даёт доступ к carProfileRepository, vinDecoder, ecuResolver
-         * без проброса через конструкторы Composables.
          */
         lateinit var instance: CarPulseApp
             private set

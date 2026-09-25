@@ -158,4 +158,5 @@
     <string name="profile_body_hint_switch">这看起来像车架号，而不是 VIN。是否切换？</string>
     <string name="profile_body_switch">切换</string>
     <string name="profile_body_ignore">不，这是 VIN</string>
+    <string name="profile_jdm_section">在 JDM 数据库中找到</string>
 </resources>

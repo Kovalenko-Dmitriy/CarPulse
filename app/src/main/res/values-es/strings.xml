@@ -158,4 +158,5 @@
     <string name="profile_body_hint_switch">Parece un número de carrocería, no un VIN. ¿Cambiar?</string>
     <string name="profile_body_switch">Cambiar</string>
     <string name="profile_body_ignore">No, es VIN</string>
+    <string name="profile_jdm_section">Encontrado en base JDM</string>
 </resources>

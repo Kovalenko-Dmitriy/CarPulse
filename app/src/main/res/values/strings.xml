@@ -321,4 +321,5 @@
     <string name="profile_body_hint_switch">Похоже, это номер кузова, а не VIN. Переключиться?</string>
     <string name="profile_body_switch">Переключиться</string>
     <string name="profile_body_ignore">Нет, это VIN</string>
+    <string name="profile_jdm_section">Найдено в базе JDM</string>
 </resources>

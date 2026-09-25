@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -32,15 +33,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -52,6 +57,7 @@ import com.carpulse.obd.domain.vin.VinDecodeResult
 import com.carpulse.obd.domain.vin.VinKind
 import com.carpulse.obd.domain.vin.VinValidation
 import com.carpulse.obd.domain.vin.VinValidator
+import com.carpulse.obd.domain.vin.jdm.JdmDecodeResult
 
 @Composable
 fun CarProfileScreen(
@@ -61,22 +67,23 @@ fun CarProfileScreen(
             profileRepo = CarPulseApp.instance.carProfileRepository,
             decoder = CarPulseApp.instance.vinDecoder,
             ecuResolver = CarPulseApp.instance.ecuResolver,
+            jdmDecoder = CarPulseApp.instance.jdmDecoder,
         ),
     ),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-
-    // Флаг: пользователь нажал «Применить». Пока true — кнопка disabled,
-    // клавиатура скрыта, поле VIN без фокуса. Сбрасывается в false,
-    // когда пользователь тапает по полю VIN.
     var isVinApplied by remember { mutableStateOf(false) }
-
-    // Режим ввода: VIN или номер кузова
+    var isJdmApplied by remember { mutableStateOf(false) }
     var inputMode by remember { mutableStateOf(IdentifierMode.VIN) }
 
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    val bodyNumberFocus = remember { FocusRequester() }
+    val makeFocus = remember { FocusRequester() }
+    val modelFocus = remember { FocusRequester() }
+    val yearFocus = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -90,6 +97,7 @@ fun CarProfileScreen(
                 CarProfileEvent.ProfileCleared -> {
                     snackbarHostState.showSnackbar(getStringSafe(R.string.profile_cleared))
                     isVinApplied = false
+                    isJdmApplied = false
                 }
             }
         }
@@ -111,17 +119,16 @@ fun CarProfileScreen(
         ) {
             Spacer(Modifier.height(8.dp))
 
-            // ---- Переключатель VIN / Номер кузова ----
             ModeSwitcher(
                 mode = inputMode,
                 onModeChange = {
                     inputMode = it
+                    isJdmApplied = false
                     viewModel.onVinEntered("")
                     viewModel.onBodyNumberEntered("")
                 },
             )
 
-            // ---- VIN ----
             if (inputMode == IdentifierMode.VIN) {
                 VinSection(
                     vin = state.profile.vin.orEmpty(),
@@ -140,55 +147,66 @@ fun CarProfileScreen(
                     onSwitchToBody = { body ->
                         viewModel.onBodyNumberEntered(body)
                         inputMode = IdentifierMode.BODY
+                        isJdmApplied = false
                         focusManager.clearFocus()
                         keyboardController?.hide()
                     },
                 )
-            } else {
-                BodyNumberSection(
-                    bodyNumber = state.profile.bodyNumber.orEmpty(),
-                    onBodyNumberChange = { viewModel.onBodyNumberEntered(it) },
-                    onConfirm = {
-                        focusManager.clearFocus()
-                        keyboardController?.hide()
-                    },
-                )
-            }
 
-            // ---- ECU (только для VIN) ----
-            if (inputMode == IdentifierMode.VIN) {
                 state.ecuResolution?.let { resolution ->
                     EcuResolutionCard(
                         result = resolution,
-                        onSelectAlternative = { entry ->
-                            viewModel.onEcuSelected(entry.id)
+                        onSelectAlternative = { entry -> viewModel.onEcuSelected(entry.id) },
+                    )
+                }
+            } else {
+                BodyNumberSection(
+                    bodyNumber = state.profile.bodyNumber.orEmpty(),
+                    focusRequester = bodyNumberFocus,
+                    onBodyNumberChange = { viewModel.onBodyNumberEntered(it) },
+                    onNext = { makeFocus.requestFocus() },
+                )
+
+                state.jdmResult?.takeIf { it.isFound }?.let { jdm ->
+                    JdmResultCard(
+                        result = jdm,
+                        applyEnabled = !isJdmApplied,
+                        onApply = {
+                            viewModel.applyJdmResult()
+                            isJdmApplied = true
+                            focusManager.clearFocus()
+                            keyboardController?.hide()
                         },
                     )
                 }
             }
 
-            // ---- Ручные поля ----
             ManualFieldsSection(
                 state = state,
+                makeFocus = makeFocus,
+                modelFocus = modelFocus,
+                yearFocus = yearFocus,
+                onMakeFocusChanged = { focused -> if (focused) isJdmApplied = false },
                 onMakeChange = viewModel::onMakeChanged,
                 onModelChange = viewModel::onModelChanged,
                 onYearChange = viewModel::onYearChanged,
+                onDone = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                },
             )
 
-            // ---- Регион ----
             RegionSection(
                 selected = state.profile.region,
                 onSelect = viewModel::onRegionChanged,
             )
 
-            // ---- Единицы ----
             UnitsSection(
                 override = state.profile.unitSystemOverride,
                 effective = state.profile.effectiveUnitSystem,
                 onSelect = viewModel::onUnitSystemChanged,
             )
 
-            // ---- Очистка ----
             ClearButton(onClick = viewModel::clearProfile)
 
             Spacer(Modifier.height(32.dp))
@@ -272,13 +290,9 @@ private fun VinSection(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .onFocusChanged { focusState ->
-                        onVinFocusChanged(focusState.isFocused)
-                    },
+                    .onFocusChanged { onVinFocusChanged(it.isFocused) },
             )
 
-            // Если введённое похоже на номер кузова (JDM, ВАЗ, ГАЗ),
-            // показываем подсказку вместо ошибки валидации.
             val looksLikeBody = vin.isNotBlank()
                     && VinValidator.classify(vin) == VinKind.BODY
 
@@ -296,14 +310,10 @@ private fun VinSection(
                         )
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(
-                                onClick = { onSwitchToBody(vin) },
-                            ) {
+                            Button(onClick = { onSwitchToBody(vin) }) {
                                 Text(stringResource(R.string.profile_body_switch))
                             }
-                            TextButton(
-                                onClick = { onVinChange("") },
-                            ) {
+                            TextButton(onClick = { onVinChange("") }) {
                                 Text(stringResource(R.string.profile_body_ignore))
                             }
                         }
@@ -390,8 +400,9 @@ private fun DecodeRow(labelRes: Int, value: String?) {
 @Composable
 private fun BodyNumberSection(
     bodyNumber: String,
+    focusRequester: FocusRequester,
     onBodyNumberChange: (String) -> Unit,
-    onConfirm: () -> Unit,
+    onNext: () -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -416,8 +427,9 @@ private fun BodyNumberSection(
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Characters,
-                    imeAction = ImeAction.Done,
+                    imeAction = ImeAction.Next,
                 ),
+                keyboardActions = KeyboardActions(onNext = { onNext() }),
                 trailingIcon = {
                     if (bodyNumber.isNotEmpty()) {
                         IconButton(onClick = { onBodyNumberChange("") }) {
@@ -428,8 +440,61 @@ private fun BodyNumberSection(
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester),
             )
+        }
+    }
+}
+
+// ========================================================================
+// JDM-карточка
+// ========================================================================
+
+@Composable
+private fun JdmResultCard(
+    result: JdmDecodeResult,
+    applyEnabled: Boolean,
+    onApply: () -> Unit,
+) {
+    val entry = result.entry ?: return
+
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+        ),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = stringResource(R.string.profile_jdm_section),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Spacer(Modifier.height(8.dp))
+
+            Text(
+                text = "${entry.make} ${entry.model}",
+                style = MaterialTheme.typography.bodyLarge,
+            )
+
+            entry.yearsLabel?.let { years ->
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = years,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = onApply,
+                enabled = applyEnabled,
+                modifier = Modifier.align(Alignment.End),
+            ) {
+                Text(stringResource(R.string.profile_vin_apply))
+            }
         }
     }
 }
@@ -441,10 +506,28 @@ private fun BodyNumberSection(
 @Composable
 private fun ManualFieldsSection(
     state: CarProfileUiState,
+    makeFocus: FocusRequester,
+    modelFocus: FocusRequester,
+    yearFocus: FocusRequester,
+    onMakeFocusChanged: (Boolean) -> Unit,
     onMakeChange: (String) -> Unit,
     onModelChange: (String) -> Unit,
     onYearChange: (String) -> Unit,
+    onDone: () -> Unit,
 ) {
+    // Локальный текст года — чтобы пользователь мог печатать посимвольно,
+    // не теряя символы при валидации.
+    var yearText by rememberSaveable { mutableStateOf("") }
+
+    // Синхронизация с внешним year: если год в профиле появился (или изменился),
+    // обновляем текст. Если year = null, не трогаем — пользователь может печатать.
+    LaunchedEffect(state.profile.year) {
+        if (state.profile.year != null) {
+            val s = state.profile.year.toString()
+            if (yearText != s) yearText = s
+        }
+    }
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -455,29 +538,52 @@ private fun ManualFieldsSection(
                 style = MaterialTheme.typography.titleMedium,
             )
 
+            // Марка → Next → Модель
             OutlinedTextField(
                 value = state.profile.make.orEmpty(),
                 onValueChange = onMakeChange,
                 label = { Text(stringResource(R.string.profile_make_label)) },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { modelFocus.requestFocus() }),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(makeFocus)
+                    .onFocusChanged { onMakeFocusChanged(it.isFocused) },
             )
 
+            // Модель → Next → Год
             OutlinedTextField(
                 value = state.profile.model.orEmpty(),
                 onValueChange = onModelChange,
                 label = { Text(stringResource(R.string.profile_model_label)) },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { yearFocus.requestFocus() }),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(modelFocus),
             )
 
+            // Год → Done → скрыть клавиатуру.
+            // Ввод принимает только цифры, до 4 символов.
             OutlinedTextField(
-                value = state.profile.year?.toString().orEmpty(),
-                onValueChange = onYearChange,
+                value = yearText,
+                onValueChange = { input ->
+                    val filtered = input.filter { it.isDigit() }.take(4)
+                    yearText = filtered
+                    onYearChange(filtered)
+                },
                 label = { Text(stringResource(R.string.profile_year_label)) },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done,
+                ),
+                keyboardActions = KeyboardActions(onDone = { onDone() }),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(yearFocus),
             )
         }
     }

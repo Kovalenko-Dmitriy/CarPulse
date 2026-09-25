@@ -158,4 +158,5 @@
     <string name="profile_body_hint_switch">VINではなく車台番号のようです。切り替えますか？</string>
     <string name="profile_body_switch">切り替え</string>
     <string name="profile_body_ignore">いいえ、VINです</string>
+    <string name="profile_jdm_section">JDMデータベースで見つかりました</string>
 </resources>

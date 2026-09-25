@@ -158,4 +158,5 @@
     <string name="profile_body_hint_switch">Das sieht nach einer Karosserienummer aus, nicht nach FIN. Wechseln?</string>
     <string name="profile_body_switch">Wechseln</string>
     <string name="profile_body_ignore">Nein, es ist FIN</string>
+    <string name="profile_jdm_section">In JDM-Datenbank gefunden</string>
 </resources>

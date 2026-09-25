@@ -310,4 +310,5 @@
     <string name="profile_body_hint_switch">This looks like a body number, not a VIN. Switch?</string>
     <string name="profile_body_switch">Switch</string>
     <string name="profile_body_ignore">No, it\'s VIN</string>
+    <string name="profile_jdm_section">Found in JDM database</string>
 </resources>
