@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -44,6 +45,34 @@ import com.carpulse.obd.ui.profile.CarProfileScreen
 import com.carpulse.obd.ui.settings.SettingsScreen
 import com.carpulse.obd.ui.trips.TripsScreen
 import com.carpulse.obd.ui.vehicle.VehicleScreen
+
+/**
+ * Единый хелпер навигации между экранами приложения.
+ *
+ * Логика:
+ *  - popUpTo(Routes.DASHBOARD) — удаляем всё, что выше dashboard,
+ *    чтобы не накапливать back stack. `inclusive = false` — dashboard
+ *    не удаляем, он остаётся «корнем» и к нему всегда можно вернуться.
+ *  - launchSingleTop = true — если экран уже открыт, не создаём дубль.
+ *  - restoreState = true — восстанавливаем сохранённое состояние экрана
+ *    (например, положение скролла), если оно есть.
+ *
+ * Используется и в bottomBar, и в TopAppBar — единый подход
+ * исключает конфликт между разными обработчиками.
+ */
+private fun NavHostController.navigateToTab(route: String) {
+    // Уже на этом экране — ничего не делаем, чтобы не дёргать стек зря.
+    if (currentDestination?.route == route) return
+
+    navigate(route) {
+        popUpTo(Routes.DASHBOARD) {
+            saveState = true
+            inclusive = false
+        }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,17 +111,7 @@ fun CarPulseRoot(vm: AppViewModel) {
                         ConnState.Disconnected -> MaterialTheme.colorScheme.outlineVariant
                     }
 
-                    IconButton(
-                        onClick = {
-                            if (currentRoute != Routes.CONNECTION) {
-                                nav.navigate(Routes.CONNECTION) {
-                                    popUpTo(nav.graph.startDestinationId) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        }
-                    ) {
+                    IconButton(onClick = { nav.navigateToTab(Routes.CONNECTION) }) {
                         Box(
                             Modifier
                                 .size(12.dp)
@@ -101,18 +120,8 @@ fun CarPulseRoot(vm: AppViewModel) {
                         )
                     }
 
-                    // ---- Bluetooth ----
-                    IconButton(
-                        onClick = {
-                            if (currentRoute != Routes.CONNECTION) {
-                                nav.navigate(Routes.CONNECTION) {
-                                    popUpTo(nav.graph.startDestinationId) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        }
-                    ) {
+                    // ---- Bluetooth / Связь ----
+                    IconButton(onClick = { nav.navigateToTab(Routes.CONNECTION) }) {
                         Icon(
                             Icons.Filled.Bluetooth,
                             contentDescription = stringResource(R.string.tab_connection)
@@ -120,15 +129,7 @@ fun CarPulseRoot(vm: AppViewModel) {
                     }
 
                     // ---- Ошибки (DTC) ----
-                    IconButton(
-                        onClick = {
-                            if (currentRoute != Routes.ERRORS) {
-                                nav.navigate(Routes.ERRORS) {
-                                    launchSingleTop = true
-                                }
-                            }
-                        }
-                    ) {
+                    IconButton(onClick = { nav.navigateToTab(Routes.ERRORS) }) {
                         Icon(
                             Icons.Filled.Warning,
                             contentDescription = stringResource(R.string.tab_errors),
@@ -137,15 +138,7 @@ fun CarPulseRoot(vm: AppViewModel) {
                     }
 
                     // ---- Профиль автомобиля ----
-                    IconButton(
-                        onClick = {
-                            if (currentRoute != Routes.PROFILE) {
-                                nav.navigate(Routes.PROFILE) {
-                                    launchSingleTop = true
-                                }
-                            }
-                        }
-                    ) {
+                    IconButton(onClick = { nav.navigateToTab(Routes.PROFILE) }) {
                         Icon(
                             Icons.Filled.DirectionsCar,
                             contentDescription = stringResource(R.string.tab_profile)
@@ -153,15 +146,7 @@ fun CarPulseRoot(vm: AppViewModel) {
                     }
 
                     // ---- Настройки ----
-                    IconButton(
-                        onClick = {
-                            if (currentRoute != Routes.SETTINGS) {
-                                nav.navigate(Routes.SETTINGS) {
-                                    launchSingleTop = true
-                                }
-                            }
-                        }
-                    ) {
+                    IconButton(onClick = { nav.navigateToTab(Routes.SETTINGS) }) {
                         Icon(
                             Icons.Filled.Settings,
                             contentDescription = stringResource(R.string.tab_settings)
@@ -179,13 +164,7 @@ fun CarPulseRoot(vm: AppViewModel) {
                 MainNavItems.forEach { item ->
                     NavigationBarItem(
                         selected = currentRoute == item.route,
-                        onClick = {
-                            nav.navigate(item.route) {
-                                popUpTo(nav.graph.startDestinationId) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
+                        onClick = { nav.navigateToTab(item.route) },
                         icon = {
                             Icon(item.icon, contentDescription = stringResource(item.labelRes))
                         },
@@ -211,18 +190,6 @@ fun CarPulseRoot(vm: AppViewModel) {
             composable(Routes.CONNECTION) { ConnectionScreen(vm) }
             composable(Routes.SETTINGS)   { SettingsScreen(vm) }
             composable(Routes.PROFILE)    { CarProfileScreen() }
-
-            // TODO: вернуть, когда PaywallScreen будет создан.
-            // Пока экран paywall отключён, чтобы проект собирался.
-            //
-            // composable("paywall") {
-            //     val app = LocalContext.current.applicationContext as CarPulseApp
-            //     PaywallScreen(
-            //         billingManager = app.billingManager,
-            //         onDismiss = { nav.popBackStack() },
-            //         onPurchased = { nav.popBackStack() }
-            //     )
-            // }
         }
     }
 }
