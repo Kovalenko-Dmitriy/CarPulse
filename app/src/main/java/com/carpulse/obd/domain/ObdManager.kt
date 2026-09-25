@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 
 class ObdManager(
     ctx: Context,
@@ -37,6 +38,12 @@ class ObdManager(
 
     private val _supportedPids = MutableStateFlow<Set<Pid>>(emptySet())
     val supportedPids: StateFlow<Set<Pid>> = _supportedPids
+
+    // [FIX RACE] Защита от параллельных connectObd().
+    // Пока идёт один — остальные вызовы сразу возвращают false.
+    // Это критично для PIC18F25K80: два параллельных ATZ сбивают
+    // K-Line инициализацию и дают BUS INIT: ...ERROR.
+    private val connectInProgress = AtomicBoolean(false)
 
     // [FIX 2] Флаг защиты от параллельных retry.
     @Volatile
@@ -135,92 +142,111 @@ class ObdManager(
     // ЭТАП 2. OBD
     // ============================================================
 
-    suspend fun connectObd(startPollingAfter: Boolean = true): Boolean = withContext(Dispatchers.IO) {
-        FileLogger.i("OBD_MGR", "connectObd(startPollingAfter=$startPollingAfter) start")
-        val t = transport ?: run {
-            FileLogger.e("OBD_MGR", "connectObd: transport = null")
-            return@withContext false
-        }
-        val c = client ?: run {
-            FileLogger.e("OBD_MGR", "connectObd: client = null")
-            return@withContext false
-        }
-        val repo = repository ?: run {
-            FileLogger.e("OBD_MGR", "connectObd: repository = null")
-            return@withContext false
-        }
+    /**
+     * [FIX RACE] Защищён от параллельных вызовов через AtomicBoolean.
+     *
+     * Если второй вызов приходит, пока первый ещё выполняется,
+     * он сразу возвращает false — иначе два параллельных ATZ
+     * сбивают K-Line инициализацию.
+     */
+    suspend fun connectObd(startPollingAfter: Boolean = true): Boolean =
+        withContext(Dispatchers.IO) {
+            // [FIX RACE] Защита от повторного входа.
+            if (!connectInProgress.compareAndSet(false, true)) {
+                FileLogger.w("OBD_MGR", "connectObd уже идёт, пропускаю")
+                return@withContext false
+            }
 
-        if (!t.state.value.isBluetoothReady) {
-            FileLogger.w("OBD_MGR", "ЭТАП 2 невозможен — Bluetooth не подключён (state=${t.state.value})")
-            return@withContext false
-        }
+            try {
+                FileLogger.i("OBD_MGR", "connectObd(startPollingAfter=$startPollingAfter) start")
+                val t = transport ?: run {
+                    FileLogger.e("OBD_MGR", "connectObd: transport = null")
+                    return@withContext false
+                }
+                val c = client ?: run {
+                    FileLogger.e("OBD_MGR", "connectObd: client = null")
+                    return@withContext false
+                }
+                val repo = repository ?: run {
+                    FileLogger.e("OBD_MGR", "connectObd: repository = null")
+                    return@withContext false
+                }
 
-        val mac = t.connectedMac
-        if (mac.isNullOrBlank()) {
-            FileLogger.w("OBD_MGR", "ЭТАП 2 невозможен — MAC неизвестен")
-            return@withContext false
-        }
+                if (!t.state.value.isBluetoothReady) {
+                    FileLogger.w("OBD_MGR", "ЭТАП 2 невозможен — Bluetooth не подключён (state=${t.state.value})")
+                    return@withContext false
+                }
 
-        // [FIX 1] skipReset вычисляется ДО setObdState(ObdInitializing).
-        val skipReset = t.state.value is ConnState.ObdConnected
-        FileLogger.i("OBD_MGR", "ЭТАП 2 — инициализация OBD (mac=$mac, skipReset=$skipReset)")
-        t.setObdState(ConnState.ObdInitializing)
+                val mac = t.connectedMac
+                if (mac.isNullOrBlank()) {
+                    FileLogger.w("OBD_MGR", "ЭТАП 2 невозможен — MAC неизвестен")
+                    return@withContext false
+                }
 
-        delay(1500)
+                // [FIX 1] skipReset вычисляется ДО setObdState(ObdInitializing).
+                val skipReset = t.state.value is ConnState.ObdConnected
+                FileLogger.i("OBD_MGR", "ЭТАП 2 — инициализация OBD (mac=$mac, skipReset=$skipReset)")
+                t.setObdState(ConnState.ObdInitializing)
 
-        FileLogger.i("OBD_MGR", "initializeObd(skipReset=$skipReset)")
-        val result = c.initializeObd(skipReset = skipReset)
-        FileLogger.i("OBD_MGR", "initializeObd result=$result")
-        when (result) {
-            is Elm327Client.ObdInitResult.Success -> {
-                t.setObdState(ConnState.ObdConnected("ELM327", mac, result.protocol))
+                delay(1500)
 
-                // [FIX DETECT] Загружаем supportedPids из SettingsStore.
-                //   Если есть — используем, detect() НЕ вызываем.
-                //   Если нет — запускаем detect() В ФОНЕ, чтобы не блокировать UI.
-                if (_supportedPids.value.isEmpty()) {
-                    val saved = settings.settings.first().supportedPids
-                    if (saved.isNotEmpty()) {
-                        val pids = saved.mapNotNull { cmd ->
-                            Pid.entries.firstOrNull { it.cmd == cmd }
-                        }.toSet()
-                        if (pids.isNotEmpty()) {
-                            _supportedPids.value = pids
-                            repo.setSupportedPids(pids)
-                            FileLogger.i("OBD_MGR", "supportedPids из SettingsStore: ${pids.size}")
+                FileLogger.i("OBD_MGR", "initializeObd(skipReset=$skipReset)")
+                val result = c.initializeObd(skipReset = skipReset)
+                FileLogger.i("OBD_MGR", "initializeObd result=$result")
+                when (result) {
+                    is Elm327Client.ObdInitResult.Success -> {
+                        t.setObdState(ConnState.ObdConnected("ELM327", mac, result.protocol))
+
+                        // [FIX DETECT] Загружаем supportedPids из SettingsStore.
+                        //   Если есть — используем, detect() НЕ вызываем.
+                        //   Если нет — запускаем detect() В ФОНЕ, чтобы не блокировать UI.
+                        if (_supportedPids.value.isEmpty()) {
+                            val saved = settings.settings.first().supportedPids
+                            if (saved.isNotEmpty()) {
+                                val pids = saved.mapNotNull { cmd ->
+                                    Pid.entries.firstOrNull { it.cmd == cmd }
+                                }.toSet()
+                                if (pids.isNotEmpty()) {
+                                    _supportedPids.value = pids
+                                    repo.setSupportedPids(pids)
+                                    FileLogger.i("OBD_MGR", "supportedPids из SettingsStore: ${pids.size}")
+                                }
+                            }
+
+                            if (_supportedPids.value.isEmpty()) {
+                                // Нет сохранённых — detect() в фоне.
+                                startDetectInBackground(c, repo)
+                            }
+                        } else {
+                            FileLogger.d("OBD_MGR", "supportedPids уже в памяти (${_supportedPids.value.size})")
                         }
+
+                        // [FIX DETECT] Polling запускается СРАЗУ — приборная панель
+                        //              и customPids работают, пока detect() идёт в фоне.
+                        if (startPollingAfter) {
+                            FileLogger.i("OBD_MGR", "startPolling(intervalMs=$intervalMs)")
+                            repo.startPolling(intervalMs)
+                        }
+
+                        FileLogger.i("OBD_MGR", "ЭТАП 2 завершён. Протокол: ${result.protocol}, поддерживаемых PID: ${_supportedPids.value.size}")
+                        true
                     }
-
-                    if (_supportedPids.value.isEmpty()) {
-                        // Нет сохранённых — detect() в фоне.
-                        startDetectInBackground(c, repo)
+                    is Elm327Client.ObdInitResult.Error -> {
+                        val currentState = t.state.value
+                        if (currentState is ConnState.Disconnected) {
+                            FileLogger.w("OBD_MGR", "ЭТАП 2 — сокет мёртв")
+                        } else {
+                            t.setObdState(ConnState.ObdError(mac, result.message))
+                            FileLogger.e("OBD_MGR", "ЭТАП 2 — ошибка: ${result.message}")
+                        }
+                        false
                     }
-                } else {
-                    FileLogger.d("OBD_MGR", "supportedPids уже в памяти (${_supportedPids.value.size})")
                 }
-
-                // [FIX DETECT] Polling запускается СРАЗУ — приборная панель
-                //              и customPids работают, пока detect() идёт в фоне.
-                if (startPollingAfter) {
-                    FileLogger.i("OBD_MGR", "startPolling(intervalMs=$intervalMs)")
-                    repo.startPolling(intervalMs)
-                }
-
-                FileLogger.i("OBD_MGR", "ЭТАП 2 завершён. Протокол: ${result.protocol}, поддерживаемых PID: ${_supportedPids.value.size}")
-                true
-            }
-            is Elm327Client.ObdInitResult.Error -> {
-                val currentState = t.state.value
-                if (currentState is ConnState.Disconnected) {
-                    FileLogger.w("OBD_MGR", "ЭТАП 2 — сокет мёртв")
-                } else {
-                    t.setObdState(ConnState.ObdError(mac, result.message))
-                    FileLogger.e("OBD_MGR", "ЭТАП 2 — ошибка: ${result.message}")
-                }
-                false
+            } finally {
+                // [FIX RACE] Сбрасываем флаг — следующий вызов может начаться.
+                connectInProgress.set(false)
             }
         }
-    }
 
     // ============================================================
     //  detect() в фоне
@@ -267,6 +293,12 @@ class ObdManager(
     private suspend fun retryObdInternal() {
         FileLogger.i("OBD_MGR", "retryObdInternal start, state=${transport?.state?.value}")
 
+        // [FIX RACE] Если connectObd уже идёт — не мешаем.
+        if (connectInProgress.get()) {
+            FileLogger.w("OBD_MGR", "retry невозможен — connectObd уже идёт")
+            return
+        }
+
         val state = transport?.state?.value
         if (state !is ConnState.BtConnected
             && state !is ConnState.ObdConnected
@@ -293,6 +325,13 @@ class ObdManager(
 
         FileLogger.i("OBD_MGR", "retry: delay ${silenceRetryDelayMs} мс")
         delay(silenceRetryDelayMs)
+
+        // [FIX RACE] Ещё раз проверяем, не начал ли кто-то другой connectObd,
+        // пока мы ждали в delay.
+        if (connectInProgress.get()) {
+            FileLogger.w("OBD_MGR", "retry: connectObd уже идёт, пропускаю")
+            return
+        }
 
         FileLogger.i("OBD_MGR", "retry: connectObd(startPollingAfter=false)")
         val ok = connectObd(startPollingAfter = false)
@@ -327,6 +366,12 @@ class ObdManager(
                     return@collect
                 }
 
+                // [FIX RACE] Если connectObd уже идёт — не запускаем параллельный tryReconnect.
+                if (connectInProgress.get()) {
+                    FileLogger.d("AUTO", "connectObd уже идёт, пропускаю autoReconnect")
+                    return@collect
+                }
+
                 val shouldReconnect = when (state) {
                     is ConnState.Disconnected -> true
                     is ConnState.ObdError -> true
@@ -345,6 +390,14 @@ class ObdManager(
         var delayMs = 1000L
         repeat(5) { attempt ->
             delay(delayMs)
+
+            // [FIX RACE] Если connectObd уже идёт — ждём следующей попытки.
+            if (connectInProgress.get()) {
+                FileLogger.d("AUTO", "попытка ${attempt + 1}/5 — connectObd уже идёт, пропускаю")
+                delayMs = (delayMs * 2).coerceAtMost(30_000L)
+                return@repeat
+            }
+
             val state = transport?.state?.value
             val socketDead = state is ConnState.Disconnected
 
