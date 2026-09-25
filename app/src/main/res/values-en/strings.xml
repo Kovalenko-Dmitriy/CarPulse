@@ -311,4 +311,14 @@
     <string name="profile_body_switch">Switch</string>
     <string name="profile_body_ignore">No, it\'s VIN</string>
     <string name="profile_jdm_section">Found in JDM database</string>
+
+    <!-- ====================== Wi-Fi connection ====================== -->
+    <string name="connection_mode_bluetooth">Bluetooth</string>
+    <string name="connection_mode_wifi">Wi-Fi</string>
+    <string name="connection_mode_restart_hint">Restart the app to apply the connection type</string>
+    <string name="connection_active_transport">Active transport: %1$s</string>
+    <string name="connection_wifi_title">Wi-Fi adapter</string>
+    <string name="connection_wifi_host_label">IP address</string>
+    <string name="connection_wifi_port_label">Port</string>
+    <string name="connection_wifi_hint">Connect your phone to the ELM327 Wi-Fi network (usually 192.168.0.10, port 35000).</string>
 </resources>

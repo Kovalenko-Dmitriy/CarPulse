@@ -322,4 +322,13 @@
     <string name="profile_body_switch">Переключиться</string>
     <string name="profile_body_ignore">Нет, это VIN</string>
     <string name="profile_jdm_section">Найдено в базе JDM</string>
+    <!-- ====================== Wi-Fi подключение ====================== -->
+    <string name="connection_mode_bluetooth">Bluetooth</string>
+    <string name="connection_mode_wifi">Wi-Fi</string>
+    <string name="connection_mode_restart_hint">Перезапустите приложение, чтобы сменить тип подключения</string>
+    <string name="connection_active_transport">Активный транспорт: %1$s</string>
+    <string name="connection_wifi_title">Wi-Fi адаптер</string>
+    <string name="connection_wifi_host_label">IP-адрес</string>
+    <string name="connection_wifi_port_label">Порт</string>
+    <string name="connection_wifi_hint">Подключите телефон к Wi-Fi-сети адаптера ELM327 (обычно 192.168.0.10, порт 35000).</string>
 </resources>

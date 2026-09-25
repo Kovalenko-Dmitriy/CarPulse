@@ -418,8 +418,12 @@ class ObdRepository(private val client: Elm327Client) {
 
     suspend fun readDtcs(): List<String> {
         FileLogger.i("OBD_REPO", "readDtcs()")
-        val resp = client.request("03", 4000) ?: return emptyList()
-        return ObdParser.dtcList(resp)
+        val resp = client.request("03", 4000)
+        FileLogger.i("OBD_REPO", "readDtcs: raw resp = ${resp ?: "<null>"}")
+        if (resp == null) return emptyList()
+        val parsed = ObdParser.dtcList(resp)
+        FileLogger.i("OBD_REPO", "readDtcs: parsed = $parsed")
+        return parsed
     }
 
     suspend fun clearDtcs(): Boolean {

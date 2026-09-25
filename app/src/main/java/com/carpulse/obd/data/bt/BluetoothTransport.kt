@@ -1,3 +1,4 @@
+
 package com.carpulse.obd.data.bt
 
 import android.annotation.SuppressLint
@@ -22,9 +23,16 @@ import java.io.OutputStream
 import java.util.UUID
 
 /**
- * Отвечает ТОЛЬКО за этап 1 — Bluetooth-соединение с адаптером ELM327.
+ * Bluetooth Classic SPP транспорт ELM327.
+ *
+ * Отвечает ТОЛЬКО за этап 1 — открытие RFCOMM-сокета с адаптером.
+ * Реализует общий контракт [ObdTransport], чтобы [ObdManager] мог
+ * работать и с BT, и с Wi-Fi без изменений.
+ *
+ * @param adapter системный BluetoothAdapter. Может быть null — в этом
+ *                случае `connect()` вернёт false.
  */
-class BluetoothTransport(private val adapter: BluetoothAdapter) {
+class BluetoothTransport(private val adapter: BluetoothAdapter) : ObdTransport {
 
     companion object {
         private const val TAG = "BT_TRANSPORT"
@@ -42,21 +50,25 @@ class BluetoothTransport(private val adapter: BluetoothAdapter) {
 
     private var readLoopJob: Job? = null
 
-    var connectedMac: String? = null
+    /**
+     * MAC текущего подключения или null.
+     * Для BT это MAC-адрес (`AA:BB:CC:11:22:33`), для Wi-Fi — `host:port`.
+     */
+    override var connectedTarget: String? = null
         private set
 
     private val _state = MutableStateFlow<ConnState>(ConnState.Disconnected)
-    val state: StateFlow<ConnState> = _state
+    override val state: StateFlow<ConnState> = _state
 
     private val _incoming = MutableSharedFlow<String>(extraBufferCapacity = 128)
-    val incoming: SharedFlow<String> = _incoming
+    override val incoming: SharedFlow<String> = _incoming
 
     // ============================================================
     // ЭТАП 1. Подключение Bluetooth
     // ============================================================
 
     @SuppressLint("MissingPermission")
-    suspend fun connect(mac: String): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun connect(target: String): Boolean = withContext(Dispatchers.IO) {
         // Синхронизированная остановка перед новым подключением
         synchronized(socketLock) {
             readLoopJob?.cancel()
@@ -66,12 +78,12 @@ class BluetoothTransport(private val adapter: BluetoothAdapter) {
 
         _state.value = ConnState.BtConnecting
         FileLogger.i("BT", "state → BtConnecting")
-        FileLogger.i("BT", "Подключение к $mac")
+        FileLogger.i("BT", "Подключение к $target")
 
         try {
             adapter.cancelDiscovery()
             delay(200)
-            val device = adapter.getRemoteDevice(mac)
+            val device = adapter.getRemoteDevice(target)
 
             val sock = try {
                 FileLogger.d("BT", "Стандартный способ: createRfcommSocketToServiceRecord")
@@ -88,12 +100,12 @@ class BluetoothTransport(private val adapter: BluetoothAdapter) {
                 socket = sock
                 input = sock.inputStream
                 output = sock.outputStream
-                connectedMac = mac
+                connectedTarget = target
             }
 
             _state.value = ConnState.BtConnected(
                 deviceName = device.name ?: "ELM327",
-                mac = mac
+                mac = target,
             )
             FileLogger.i("BT", "state → BtConnected (${device.name ?: "ELM327"})")
             FileLogger.i("BT", "Сокет открыт. Устройство: ${device.name ?: "ELM327"}")
@@ -133,8 +145,12 @@ class BluetoothTransport(private val adapter: BluetoothAdapter) {
                 try {
                     val now = System.currentTimeMillis()
                     if (_state.value is ConnState.ObdConnected
-                        && now - lastDataTime > HEARTBEAT_TIMEOUT_MS) {
-                        FileLogger.w("BT", "${HEARTBEAT_TIMEOUT_MS / 1000} сек нет данных при активном OBD — разрыв")
+                        && now - lastDataTime > HEARTBEAT_TIMEOUT_MS
+                    ) {
+                        FileLogger.w(
+                            "BT",
+                            "${HEARTBEAT_TIMEOUT_MS / 1000} сек нет данных при активном OBD — разрыв",
+                        )
                         synchronized(socketLock) {
                             disconnectInternalLocked()
                         }
@@ -195,7 +211,7 @@ class BluetoothTransport(private val adapter: BluetoothAdapter) {
     // Отправка байтов
     // ============================================================
 
-    suspend fun send(cmd: String): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun send(cmd: String): Boolean = withContext(Dispatchers.IO) {
         synchronized(socketLock) {
             try {
                 FileLogger.d("BT", "→ '$cmd'")
@@ -215,7 +231,7 @@ class BluetoothTransport(private val adapter: BluetoothAdapter) {
     // Управление OBD-состоянием
     // ============================================================
 
-    fun setObdState(newState: ConnState) {
+    override fun setObdState(newState: ConnState) {
         FileLogger.i("BT", "state → $newState")
         _state.value = newState
     }
@@ -224,7 +240,7 @@ class BluetoothTransport(private val adapter: BluetoothAdapter) {
     // Отключение
     // ============================================================
 
-    suspend fun disconnect() = withContext(Dispatchers.IO) {
+    override suspend fun disconnect() = withContext(Dispatchers.IO) {
         FileLogger.i("BT", "disconnect()")
         synchronized(socketLock) {
             readLoopJob?.cancel()
@@ -242,7 +258,7 @@ class BluetoothTransport(private val adapter: BluetoothAdapter) {
         input = null
         output = null
         socket = null
-        connectedMac = null
+        connectedTarget = null
         _state.value = ConnState.Disconnected
         if (wasConnected) {
             FileLogger.i("BT", "state → Disconnected (был подключён)")

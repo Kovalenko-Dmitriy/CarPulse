@@ -159,4 +159,14 @@
     <string name="profile_body_switch">Wechseln</string>
     <string name="profile_body_ignore">Nein, es ist FIN</string>
     <string name="profile_jdm_section">In JDM-Datenbank gefunden</string>
+
+    <!-- ====================== WLAN-Verbindung ====================== -->
+    <string name="connection_mode_bluetooth">Bluetooth</string>
+    <string name="connection_mode_wifi">WLAN</string>
+    <string name="connection_mode_restart_hint">App neu starten, um den Verbindungstyp zu ändern</string>
+    <string name="connection_active_transport">Aktiver Transport: %1$s</string>
+    <string name="connection_wifi_title">WLAN-Adapter</string>
+    <string name="connection_wifi_host_label">IP-Adresse</string>
+    <string name="connection_wifi_port_label">Port</string>
+    <string name="connection_wifi_hint">Verbinden Sie das Telefon mit dem ELM327-WLAN (meist 192.168.0.10, Port 35000).</string>
 </resources>

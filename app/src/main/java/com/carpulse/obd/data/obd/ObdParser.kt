@@ -412,47 +412,83 @@ object ObdParser {
         val m = Regex("""(\d+\.?\d*)V""").find(resp) ?: return null
         return m.groupValues[1].toFloatOrNull()
     }
-// ============================================================
+
+    // ============================================================
     // DTC (Mode 03)
     // ============================================================
 
     /**
      * 03 — Список кодов ошибок.
      *
-     * ISO 9141-2 (несколько строк):
-     *   "43 02 01 33 00"
-     *   "43 02 02 00 00 00 00"
-     * → P0133
+     * Формат ответа ELM327 (после снятия эха):
+     *   "43" + <count:2> + <code1:4> + <code2:4> + ...
+     * Возможны переносы строк (\r) между кодами — например при multi-frame:
+     *   "430303010133\r0420"
      *
-     * CAN (один фрейм):
-     *   "43 02 01 03 00 01 71 00 00"
-     * → P0300, P0171
+     * Примеры:
+     *   "4303030101330420"        → [P0301, P0133, P0420]
+     *   "430303010133\r0420"      → то же
+     *   "43010301"                → [P0301]
+     *   "4300"                    → []
+     *   "NO DATA"                 → []
      */
     fun dtcList(resp: String): List<String> {
-        val clean = resp.replace(" ", "").replace("\r", "").replace("\n", "").uppercase()
-        if (!clean.contains("43")) return emptyList()
+        val clean = resp
+            .replace(" ", "")
+            .replace("\r", "")
+            .replace("\n", "")
+            .replace(">", "")
+            .uppercase()
 
-        // Убираем все "43" заголовки, оставляем только данные
-        val dataOnly = clean.replace("43", "")
+        // Ищем маркер Mode 03. Может быть после эха "03" (если ATE1)
+        val start = clean.indexOf("43")
+        if (start < 0) return emptyList()
+
+        // Всё после "43"
+        var data = clean.substring(start + 2)
+
+        // Первые 2 hex-символа — количество кодов
+        if (data.length < 2) return emptyList()
+        val count = data.substring(0, 2).toIntOrNull(16) ?: return emptyList()
+        if (count == 0) return emptyList()
+
+        data = data.substring(2)
+
+        // Нарезаем на 4-символьные коды, пока не наберём count
         val codes = mutableListOf<String>()
         var i = 0
-        while (i + 4 <= dataOnly.length) {
-            val code = dataOnly.substring(i, i + 4)
+        while (i + 4 <= data.length && codes.size < count) {
+            val code = data.substring(i, i + 4)
             if (code != "0000") codes.add(decodeDtc(code))
             i += 4
         }
         return codes
     }
 
-    /** Декодирует 4-символьный hex в код DTC (P0300 и т.д.). */
+    /**
+     * Декодирует 4-символьный hex в код DTC по SAE J2012.
+     *
+     * Первый hex-символ содержит и букву (старшие 2 бита),
+     * и первую цифру (младшие 2 бита):
+     *
+     *   "0301" → first = 0x0 → (0x0 >> 2)=0 → 'P', (0x0 & 0x3)=0 → первая цифра 0
+     *          → "P" + "0" + "301" = "P0301"
+     *   "4301" → first = 0x4 → (0x4 >> 2)=1 → 'C', (0x4 & 0x3)=0 → "C0301"
+     *   "8301" → first = 0x8 → (0x8 >> 2)=2 → 'B', (0x8 & 0x3)=0 → "B0301"
+     *   "C301" → first = 0xC → (0xC >> 2)=3 → 'U', (0xC & 0x3)=0 → "U0301"
+     */
     private fun decodeDtc(code: String): String {
-        val first = code[0]
-        val prefix = when (first) {
-            '0', '1', '2', '3' -> 'P'
-            '4', '5', '6', '7' -> 'C'
-            '8', '9', 'A', 'B' -> 'B'
+        if (code.length < 4) return "P0000"
+
+        val first = code[0].toString().toInt(16)
+        val prefix = when (first shr 2) {
+            0 -> 'P'
+            1 -> 'C'
+            2 -> 'B'
             else -> 'U'
         }
-        return "$prefix${code.substring(1)}"
+        val firstDigit = first and 0x3
+
+        return "$prefix$firstDigit${code.substring(1)}"
     }
 }

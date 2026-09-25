@@ -16,7 +16,6 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Elm327Client, заточенный под Honda Civic EU1 (7-е поколение, 2001–2005).
- *
  * Протокол: ISO 9141-2, 5 baud init, 10.4 kbaud.
  * Адрес ЭБУ: 6A. Header: DA F1 10. Wakeup: 82 6A F1 3E.
  *
@@ -38,11 +37,11 @@ import kotlinx.coroutines.withTimeoutOrNull
  * 13. delay(300) — дать шине инициализироваться.
  * 14. 0100 — ЭБУ должен ответить 4100.
  *
- * @param skipReset если true — НЕ делать ATZ. Используется при повторном
- *                  подключении (когда адаптер уже ObdConnected), чтобы
- *                  сохранить ATSP3/ATIIA/ATWM/ATSH и «разбуженную» K-line.
+ * @param skipReset если true — НЕ делать ATZ. Используется
+ * при повторном подключении (когда адаптер уже ObdConnected), чтобы
+ * сохранить ATSP3/ATIIA/ATWM/ATSH и «разбуженную» K-line.
  */
-class Elm327Client(private val transport: BluetoothTransport) {
+class Elm327Client(private val transport: ObdTransport) {
 
     companion object {
         private const val TAG = "ELM327"
@@ -51,14 +50,13 @@ class Elm327Client(private val transport: BluetoothTransport) {
         private const val BUS_RETRY_TIMEOUT_MS = 5000L
 
         // [FIX C] Критичная пауза после ATZ. На ISO 9141-2 K-line требует
-        //         10+ секунд, чтобы ЭБУ «остыл» и снова отвечал на 5 baud init.
-        //         5 секунд — НЕ ХВАТАЕТ. Проверено на логах: после 5 секунд
-        //         010C/010D/0105 всё равно NO DATA.
+        // 10+ секунд, чтобы ЭБУ «остыл» и снова отвечал на 5 baud init.
+        // 5 секунд — НЕ ХВАТАЕТ. Проверено на логах: после 5 секунд
+        // 010C/010D/0105 всё равно NO DATA.
         private const val POST_RESET_DELAY_MS = 10000L
 
         private val ADAPTER_ERRORS = setOf(
-            "NO DATA", "ERROR", "?", "STOPPED",
-            "CAN ERROR", "BUFFER FULL", "UNABLE TO CONNECT"
+            "NO DATA", "ERROR", "?", "STOPPED", "CAN ERROR", "BUFFER FULL", "UNABLE TO CONNECT"
         )
     }
 
@@ -88,10 +86,9 @@ class Elm327Client(private val transport: BluetoothTransport) {
 
     /**
      * Инициализация OBD.
-     *
      * @param skipReset если true — не делать ATZ. Используется при повторном
-     *                  подключении, когда адаптер уже ObdConnected и шина
-     *                  K-line «разбужена».
+     * подключении, когда адаптер уже ObdConnected и шина
+     * K-line «разбужена».
      */
     suspend fun initializeObd(skipReset: Boolean = false): ObdInitResult {
         FileLogger.i("ELM327", "=== ЭТАП 2 — инициализация OBD (Honda Civic EU1, skipReset=$skipReset) ===")
@@ -131,14 +128,14 @@ class Elm327Client(private val transport: BluetoothTransport) {
 
         // Шаги 5–12. Настройка шины K-line для Honda EU1.
         FileLogger.i("ELM327", "Шаги 5-12: настройка K-line Honda EU1")
-        request("ATSP3", 2000)                    // ISO 9141-2
-        request("ATIB 10", 1000)                  // baud 10.4 kbaud
-        request("ATIIA 6A", 1000)                 // address ЭБУ Honda (5 baud init)
-        request("ATWM 82 6A F1 3E", 1000)         // wakeup message
-        request("ATSW 00", 1000)                  // wakeup interval
-        request("ATSH DA F1 10", 1000)            // header Honda
-        request("ATAT 2", 1000)                   // aggressive adaptive timing
-        request("ATST FF", 1000)                  // timeout ~1 сек
+        request("ATSP3", 2000)          // ISO 9141-2
+        request("ATIB 10", 1000)        // baud 10.4 kbaud
+        request("ATIIA 6A", 1000)       // address ЭБУ Honda (5 baud init)
+        request("ATWM 82 6A F1 3E", 1000) // wakeup message
+        request("ATSW 00", 1000)        // wakeup interval
+        request("ATSH DA F1 10", 1000)  // header Honda
+        request("ATAT 2", 1000)         // aggressive adaptive timing
+        request("ATST FF", 1000)        // timeout ~1 сек
 
         // Шаг 13. Дать шине инициализироваться.
         FileLogger.i("ELM327", "Шаг 13: delay(300)")
@@ -186,16 +183,14 @@ class Elm327Client(private val transport: BluetoothTransport) {
     suspend fun request(cmd: String, timeoutMs: Long = DEFAULT_TIMEOUT_MS): String? {
         return requestMutex.withLock {
             val ts = transport.state.value
-            if (ts !is ConnState.BtConnected
-                && ts !is ConnState.ObdConnected
-                && ts !is ConnState.ObdInitializing
-            ) {
+            if (ts !is ConnState.BtConnected && ts !is ConnState.ObdConnected && ts !is ConnState.ObdInitializing) {
                 FileLogger.w("ELM327", "→ $cmd : SKIP (transport=$ts)")
                 return@withLock null
             }
 
             drainFrames()
             FileLogger.d("ELM327", "→ $cmd")
+
             val sendOk = transport.send(cmd)
             if (!sendOk) {
                 FileLogger.e("ELM327", "→ $cmd : SEND FAILED")
@@ -205,16 +200,12 @@ class Elm327Client(private val transport: BluetoothTransport) {
             val deadline = System.currentTimeMillis() + timeoutMs
             while (System.currentTimeMillis() < deadline) {
                 val remaining = deadline - System.currentTimeMillis()
-
-                val raw = withTimeoutOrNull(remaining) {
-                    incomingFrames.receive()
-                } ?: run {
+                val raw = withTimeoutOrNull(remaining) { incomingFrames.receive() } ?: run {
                     FileLogger.w("ELM327", "← $cmd : TIMEOUT (${timeoutMs} ms)")
                     return@withLock null
                 }
 
                 val cleaned = stripEcho(cmd, raw)
-
                 if (isStaleFrame(cmd, cleaned)) {
                     FileLogger.w("ELM327", "← $cmd : STALE '$cleaned'")
                     continue
@@ -223,6 +214,7 @@ class Elm327Client(private val transport: BluetoothTransport) {
                 FileLogger.d("ELM327", "← $cmd : '$cleaned'")
                 return@withLock cleaned
             }
+
             FileLogger.w("ELM327", "← $cmd : TIMEOUT (deadline)")
             return@withLock null
         }
@@ -234,18 +226,15 @@ class Elm327Client(private val transport: BluetoothTransport) {
             return null
         }
         val upper = raw.uppercase()
-
         if (upper.replace(" ", "").startsWith("7F")) {
             FileLogger.w("ELM327", "Отрицательный ответ ЭБУ на $cmd: $raw")
             return null
         }
-
         val lines = upper.lines().map { it.trim() }
         if (lines.any { it in ADAPTER_ERRORS }) {
             FileLogger.w("ELM327", "Служебный ответ адаптера на $cmd: $raw")
             return null
         }
-
         FileLogger.d("ELM327", "requestObd($cmd) = '$raw'")
         return raw
     }
@@ -260,20 +249,17 @@ class Elm327Client(private val transport: BluetoothTransport) {
             FileLogger.d("ELM327", "→ $cmd (multiline)")
             transport.send(cmd)
 
-            val first = withTimeoutOrNull(firstTimeoutMs) {
-                incomingFrames.receive()
-            } ?: run {
+            val first = withTimeoutOrNull(firstTimeoutMs) { incomingFrames.receive() } ?: run {
                 FileLogger.w("ELM327", "← $cmd : TIMEOUT (multiline first)")
                 return ""
             }
 
             val sb = StringBuilder(first)
             while (true) {
-                val next = withTimeoutOrNull(idleMs) {
-                    incomingFrames.receive()
-                } ?: break
+                val next = withTimeoutOrNull(idleMs) { incomingFrames.receive() } ?: break
                 sb.append('\n').append(next)
             }
+
             val result = sb.toString()
             FileLogger.d("ELM327", "← $cmd : multiline ${result.length} chars")
             return result
@@ -289,7 +275,9 @@ class Elm327Client(private val transport: BluetoothTransport) {
 
     private fun drainFrames() {
         var count = 0
-        while (incomingFrames.tryReceive().isSuccess) { count++ }
+        while (incomingFrames.tryReceive().isSuccess) {
+            count++
+        }
         if (count > 0) {
             FileLogger.d("ELM327", "drainFrames: отброшено $count кадров")
         }
@@ -324,17 +312,16 @@ class Elm327Client(private val transport: BluetoothTransport) {
 
         // OBD-команды — проверка ожидаемого prefix.
         val errorMarkers = listOf(
-            "NODATA", "ERROR", "BUSINIT", "UNABLE",
-            "SEARCHING", "STOPPED", "CANERROR", "?", "BUFFERFULL"
+            "NODATA", "ERROR", "BUSINIT", "UNABLE", "SEARCHING",
+            "STOPPED", "CANERROR", "?", "BUFFERFULL"
         )
         if (errorMarkers.any { clean.contains(it) }) return false
 
         val cmdUpper = cmd.uppercase().replace(" ", "")
-        if (cmdUpper.length >= 4) {
-            // "0100" → "4100", "010C" → "410C", "010D" → "410D".
-            val expected = "4" + cmdUpper.drop(1)
-            if (clean.contains(expected)) return false
-        }
+        // Для OBD-команд ожидаемый ответ — "4" + остаток команды.
+        // "03" → "43", "04" → "44", "0100" → "4100", "0902" → "4902".
+        val expected = "4" + cmdUpper.drop(1)
+        if (clean.contains(expected)) return false
 
         return true
     }
@@ -345,7 +332,6 @@ class Elm327Client(private val transport: BluetoothTransport) {
 
     suspend fun readVehicleInfo(): VehicleInfo {
         FileLogger.i("ELM327", "=== Чтение Mode 09 ===")
-
         val supported = readSupportedMode09Pids()
         FileLogger.i("ELM327", "Mode 09 поддерживает: $supported")
 
@@ -417,7 +403,6 @@ class Elm327Client(private val transport: BluetoothTransport) {
 
     private fun parseVin(resp: String): String? {
         val clean = resp.replace(" ", "").replace("\r", "").replace("\n", "").uppercase()
-
         val sb = StringBuilder()
         var i = 0
         while (i + 1 < clean.length) {
@@ -426,10 +411,8 @@ class Elm327Client(private val transport: BluetoothTransport) {
             if (code != null && code in 32..126) sb.append(code.toChar())
             i += 2
         }
-
         val candidate = sb.toString().filter { it.isLetterOrDigit() }
         if (candidate.length < 17) return null
-
         val vinRegex = Regex("[A-HJ-NP-RZ0-9]{17}")
         return vinRegex.find(candidate)?.value
     }

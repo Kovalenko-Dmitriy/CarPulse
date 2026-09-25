@@ -159,4 +159,14 @@
     <string name="profile_body_switch">Changer</string>
     <string name="profile_body_ignore">Non, c\'est un NIV</string>
     <string name="profile_jdm_section">Trouvé dans la base JDM</string>
+
+    <!-- ====================== Connexion Wi-Fi ====================== -->
+    <string name="connection_mode_bluetooth">Bluetooth</string>
+    <string name="connection_mode_wifi">Wi-Fi</string>
+    <string name="connection_mode_restart_hint">Redémarrez l\'application pour changer le type de connexion</string>
+    <string name="connection_active_transport">Transport actif : %1$s</string>
+    <string name="connection_wifi_title">Adaptateur Wi-Fi</string>
+    <string name="connection_wifi_host_label">Adresse IP</string>
+    <string name="connection_wifi_port_label">Port</string>
+    <string name="connection_wifi_hint">Connectez le téléphone au réseau Wi-Fi ELM327 (généralement 192.168.0.10, port 35000).</string>
 </resources>

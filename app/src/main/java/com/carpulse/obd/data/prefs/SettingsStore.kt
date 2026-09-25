@@ -15,22 +15,41 @@ private val Context.dataStore by preferencesDataStore(name = "carpulse_settings"
 
 enum class Units { METRIC, IMPERIAL }
 
+/**
+ * Тип физического подключения к адаптеру ELM327.
+ *
+ * Читается один раз при старте приложения (в CarPulseApp.onCreate).
+ * Смена типа в настройках требует перезапуска приложения — транспорт
+ * создаётся при старте и живёт весь процесс.
+ */
+enum class ConnectionType { BLUETOOTH, WIFI }
+
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val units: Units = Units.METRIC,
 
-    // --- Устройство ---
+    // --- Подключение ---
+    val connectionType: ConnectionType = ConnectionType.BLUETOOTH,
+
+    /** MAC Bluetooth-адаптера (последнее успешное подключение). */
     val lastMac: String? = null,
     val lastDeviceName: String? = null,
+
+    /** Wi-Fi: последний host (обычно IP точки доступа адаптера). */
+    val lastWiFiHost: String = "192.168.0.10",
+
+    /** Wi-Fi: порт TCP-сервера ELM327. Стандарт — 35000. */
+    val wifiPort: Int = 35000,
+
     val autoConnect: Boolean = true,
     val pollingIntervalMs: Long = 300L,
 
     // --- Датчики ---
     val selectedPids: Set<String> = emptySet(),
 
-    // --- Кэш supported PID для конкретной машины ---
+    // --- Кэш supported PID для данного ЭБУ ---
     // Заполняется один раз при первом успешном detect(),
-    // дальше используется без повторного опроса 8 PID.
+    // дальше используется без повторного сканирования.
     val supportedPids: Set<String> = emptySet(),
 
     // --- Топливо ---
@@ -49,8 +68,11 @@ class SettingsStore(private val ctx: Context) {
     // ---- Ключи ----
     private val KEY_THEME = stringPreferencesKey("theme_mode")
     private val KEY_UNITS = stringPreferencesKey("units")
+    private val KEY_CONNECTION_TYPE = stringPreferencesKey("connection_type")
     private val KEY_MAC = stringPreferencesKey("last_mac")
     private val KEY_DEVICE_NAME = stringPreferencesKey("last_device_name")
+    private val KEY_WIFI_HOST = stringPreferencesKey("last_wifi_host")
+    private val KEY_WIFI_PORT = intPreferencesKey("wifi_port")
     private val KEY_INTERVAL = intPreferencesKey("interval_ms")
     private val KEY_AUTOCONNECT = booleanPreferencesKey("auto_connect")
     private val KEY_SELECTED_PIDS = stringSetPreferencesKey("selected_pids")
@@ -68,7 +90,7 @@ class SettingsStore(private val ctx: Context) {
     // Поездки
     private val KEY_RECORD_TRIPS = booleanPreferencesKey("record_trips")
 
-    // ---- Единственное объявление settings ----
+    // ---- Поток всех настроек ----
     val settings: Flow<AppSettings> = ctx.dataStore.data.map { p ->
         AppSettings(
             themeMode = p[KEY_THEME]
@@ -77,8 +99,16 @@ class SettingsStore(private val ctx: Context) {
             units = p[KEY_UNITS]
                 ?.let { runCatching { Units.valueOf(it) }.getOrNull() }
                 ?: Units.METRIC,
+
+            connectionType = p[KEY_CONNECTION_TYPE]
+                ?.let { runCatching { ConnectionType.valueOf(it) }.getOrNull() }
+                ?: ConnectionType.BLUETOOTH,
+
             lastMac = p[KEY_MAC],
             lastDeviceName = p[KEY_DEVICE_NAME],
+            lastWiFiHost = p[KEY_WIFI_HOST] ?: "192.168.0.10",
+            wifiPort = p[KEY_WIFI_PORT] ?: 35000,
+
             autoConnect = p[KEY_AUTOCONNECT] ?: true,
             pollingIntervalMs = (p[KEY_INTERVAL] ?: 300).toLong(),
             selectedPids = p[KEY_SELECTED_PIDS] ?: emptySet(),
@@ -107,7 +137,15 @@ class SettingsStore(private val ctx: Context) {
     }
 
     // ============================================================
-    // Устройство
+    // Подключение: тип транспорта
+    // ============================================================
+
+    suspend fun setConnectionType(type: ConnectionType) = ctx.dataStore.edit {
+        it[KEY_CONNECTION_TYPE] = type.name
+    }
+
+    // ============================================================
+    // Bluetooth-устройство
     // ============================================================
 
     suspend fun setLastMac(mac: String) = ctx.dataStore.edit {
@@ -123,6 +161,22 @@ class SettingsStore(private val ctx: Context) {
         it.remove(KEY_MAC)
         it.remove(KEY_DEVICE_NAME)
     }
+
+    // ============================================================
+    // Wi-Fi
+    // ============================================================
+
+    suspend fun setLastWiFiHost(host: String) = ctx.dataStore.edit {
+        it[KEY_WIFI_HOST] = host
+    }
+
+    suspend fun setWiFiPort(port: Int) = ctx.dataStore.edit {
+        it[KEY_WIFI_PORT] = port
+    }
+
+    // ============================================================
+    // Автоподключение и интервал опроса
+    // ============================================================
 
     suspend fun setAutoConnect(v: Boolean) = ctx.dataStore.edit {
         it[KEY_AUTOCONNECT] = v

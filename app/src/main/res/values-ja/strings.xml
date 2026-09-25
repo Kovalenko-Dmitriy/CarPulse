@@ -159,4 +159,14 @@
     <string name="profile_body_switch">切り替え</string>
     <string name="profile_body_ignore">いいえ、VINです</string>
     <string name="profile_jdm_section">JDMデータベースで見つかりました</string>
+
+    <!-- ====================== Wi-Fi 接続 ====================== -->
+    <string name="connection_mode_bluetooth">Bluetooth</string>
+    <string name="connection_mode_wifi">Wi-Fi</string>
+    <string name="connection_mode_restart_hint">接続タイプを変更するにはアプリを再起動してください</string>
+    <string name="connection_active_transport">アクティブなトランスポート: %1$s</string>
+    <string name="connection_wifi_title">Wi-Fi アダプター</string>
+    <string name="connection_wifi_host_label">IP アドレス</string>
+    <string name="connection_wifi_port_label">ポート</string>
+    <string name="connection_wifi_hint">ELM327 の Wi-Fi ネットワーク (通常 192.168.0.10、ポート 35000) に接続してください。</string>
 </resources>

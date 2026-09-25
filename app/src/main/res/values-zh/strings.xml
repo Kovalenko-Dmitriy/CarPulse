@@ -159,4 +159,14 @@
     <string name="profile_body_switch">切换</string>
     <string name="profile_body_ignore">不，这是 VIN</string>
     <string name="profile_jdm_section">在 JDM 数据库中找到</string>
+
+    <!-- ====================== Wi-Fi 连接 ====================== -->
+    <string name="connection_mode_bluetooth">蓝牙</string>
+    <string name="connection_mode_wifi">Wi-Fi</string>
+    <string name="connection_mode_restart_hint">请重启应用以更改连接类型</string>
+    <string name="connection_active_transport">当前传输方式：%1$s</string>
+    <string name="connection_wifi_title">Wi-Fi 适配器</string>
+    <string name="connection_wifi_host_label">IP 地址</string>
+    <string name="connection_wifi_port_label">端口</string>
+    <string name="connection_wifi_hint">请将手机连接到 ELM327 的 Wi-Fi 网络（通常为 192.168.0.10，端口 35000）。</string>
 </resources>

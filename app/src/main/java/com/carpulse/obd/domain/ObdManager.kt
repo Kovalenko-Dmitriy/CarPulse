@@ -1,12 +1,11 @@
 package com.carpulse.obd.domain
 
-import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import com.carpulse.obd.FileLogger
 import com.carpulse.obd.data.bt.BluetoothTransport
 import com.carpulse.obd.data.bt.ConnState
 import com.carpulse.obd.data.bt.Elm327Client
+import com.carpulse.obd.data.bt.ObdTransport
 import com.carpulse.obd.data.obd.Pid
 import com.carpulse.obd.data.obd.SupportedPidsDetector
 import com.carpulse.obd.data.obd.TimedValue
@@ -24,17 +23,34 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
 
+/**
+ * Общий менеджер подключения к ELM327.
+ *
+ * Работает через абстракцию [ObdTransport] — реализации:
+ *  - [BluetoothTransport] — Bluetooth Classic SPP;
+ *  - [WiFiTransport]      — TCP-сокет (Wi-Fi).
+ *
+ * Сам транспорт создаётся снаружи (в CarPulseApp) в зависимости от
+ * пользовательской настройки `connectionType`. Это значит:
+ *  - логика этапов 1/2 не зависит от типа физического соединения;
+ *  - смена типа подключения делается пересозданием ObdManager
+ *    (или перезапуском приложения — настройка читается на старте).
+ *
+ * @param context  Application context (пока не используется, оставлен для
+ *                 будущих сервисов — например, уведомлений).
+ * @param settings хранилище настроек.
+ * @param transport активный транспорт (BT или Wi-Fi).
+ */
 class ObdManager(
-    ctx: Context,
-    private val settings: SettingsStore
+    private val context: Context,
+    private val settings: SettingsStore,
+    val transport: ObdTransport,
 ) {
 
-    private val adapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    val transport: BluetoothTransport?
-    val client: Elm327Client?
-    val repository: ObdRepository?
+    val client: Elm327Client = Elm327Client(transport)
+    val repository: ObdRepository = ObdRepository(client)
 
     private val _supportedPids = MutableStateFlow<Set<Pid>>(emptySet())
     val supportedPids: StateFlow<Set<Pid>> = _supportedPids
@@ -59,38 +75,24 @@ class ObdManager(
     private var detectInProgress = false
 
     init {
-        FileLogger.i("OBD_MGR", "init: adapter=${adapter != null}")
-        if (adapter != null) {
-            val t = BluetoothTransport(adapter)
-            val c = Elm327Client(t)
-            val repo = ObdRepository(c)
-            transport = t
-            client = c
-            repository = repo
-            FileLogger.i("OBD_MGR", "BluetoothTransport + Elm327Client + ObdRepository созданы")
+        FileLogger.i("OBD_MGR", "init: transport=${transport.javaClass.simpleName}")
 
-            repo.onSilence = {
-                if (retryInProgress) {
-                    FileLogger.w("OBD_MGR", "onSilence — retry уже идёт, пропускаю")
-                } else if (repository?.retryExhausted?.value == true) {
-                    FileLogger.w("OBD_MGR", "onSilence — retry исчерпан, пропускаю")
-                } else {
-                    FileLogger.w("OBD_MGR", "onSilence — retry этапа 2")
-                    retryInProgress = true
-                    scope.launch {
-                        try {
-                            retryObdInternal()
-                        } finally {
-                            retryInProgress = false
-                        }
+        repository.onSilence = {
+            if (retryInProgress) {
+                FileLogger.w("OBD_MGR", "onSilence — retry уже идёт, пропускаю")
+            } else if (repository.retryExhausted.value == true) {
+                FileLogger.w("OBD_MGR", "onSilence — retry исчерпан, пропускаю")
+            } else {
+                FileLogger.w("OBD_MGR", "onSilence — retry этапа 2")
+                retryInProgress = true
+                scope.launch {
+                    try {
+                        retryObdInternal()
+                    } finally {
+                        retryInProgress = false
                     }
                 }
             }
-        } else {
-            transport = null
-            client = null
-            repository = null
-            FileLogger.e("OBD_MGR", "BluetoothAdapter = null — OBD недоступен")
         }
     }
 
@@ -100,13 +102,29 @@ class ObdManager(
         tripRepository = repo
     }
 
-    val connection: StateFlow<ConnState>? get() = transport?.state
-    val live: StateFlow<LiveSnapshot>? get() = repository?.live
-    val battery: StateFlow<TimedValue?>? get() = repository?.battery
-    val retryExhausted: StateFlow<Boolean>? get() = repository?.retryExhausted
-    val noDataMode: StateFlow<Boolean>? get() = repository?.noDataMode
+    val connection: StateFlow<ConnState> get() = transport.state
+    val live: StateFlow<LiveSnapshot> get() = repository.live
+    val battery: StateFlow<TimedValue?> get() = repository.battery
+    val retryExhausted: StateFlow<Boolean> get() = repository.retryExhausted
+    val noDataMode: StateFlow<Boolean> get() = repository.noDataMode
 
-    val isBluetoothAvailable: Boolean get() = adapter != null
+    /**
+     * Есть ли физический Bluetooth-адаптер.
+     *
+     * Возвращает true ТОЛЬКО если активный транспорт — Bluetooth.
+     * Для Wi-Fi транспорта возвращает false. Это не ошибка — это
+     * информация для UI (например, скрыть выбор BT-устройств).
+     */
+    val isBluetoothAvailable: Boolean get() = transport is BluetoothTransport
+
+    /**
+     * Человекочитаемое имя типа транспорта для UI.
+     */
+    val transportKind: String
+        get() = when (transport) {
+            is BluetoothTransport -> "Bluetooth"
+            else -> "Wi-Fi"
+        }
 
     private var intervalMs: Long = 300L
 
@@ -119,24 +137,31 @@ class ObdManager(
     private var silenceRetryDelayMs = 5000L
 
     // ============================================================
-    // ЭТАП 1. Bluetooth
+    // ЭТАП 1. Открытие транспорта (BT или Wi-Fi)
     // ============================================================
 
-    @SuppressLint("MissingPermission")
-    suspend fun connectBluetooth(mac: String): Boolean = withContext(Dispatchers.IO) {
-        val t = transport ?: run {
-            FileLogger.e("OBD_MGR", "connectBluetooth: transport = null")
-            return@withContext false
-        }
-        FileLogger.i("OBD_MGR", "ЭТАП 1 — подключение Bluetooth к $mac")
-        val ok = t.connect(mac)
+    /**
+     * Подключение к адаптеру на транспортном уровне.
+     *
+     * @param target для BT — MAC-адрес (`AA:BB:CC:11:22:33`);
+     *               для Wi-Fi — `host` или `host:port` (`192.168.0.10:35000`).
+     */
+    suspend fun connectBluetooth(target: String): Boolean = withContext(Dispatchers.IO) {
+        FileLogger.i("OBD_MGR", "ЭТАП 1 — подключение к $target (${transportKind})")
+        val ok = transport.connect(target)
         if (ok) {
             FileLogger.i("OBD_MGR", "ЭТАП 1 завершён успешно")
         } else {
-            FileLogger.e("OBD_MGR", "ЭТАП 1 — ошибка Bluetooth")
+            FileLogger.e("OBD_MGR", "ЭТАП 1 — ошибка транспорта")
         }
         ok
     }
+
+    /**
+     * Алиас для Wi-Fi-подключения. Семантически — то же самое, что
+     * [connectBluetooth], но позволяет UI выражаться точнее.
+     */
+    suspend fun connectWiFi(target: String): Boolean = connectBluetooth(target)
 
     // ============================================================
     // ЭТАП 2. OBD
@@ -159,47 +184,43 @@ class ObdManager(
 
             try {
                 FileLogger.i("OBD_MGR", "connectObd(startPollingAfter=$startPollingAfter) start")
-                val t = transport ?: run {
-                    FileLogger.e("OBD_MGR", "connectObd: transport = null")
-                    return@withContext false
-                }
-                val c = client ?: run {
-                    FileLogger.e("OBD_MGR", "connectObd: client = null")
-                    return@withContext false
-                }
-                val repo = repository ?: run {
-                    FileLogger.e("OBD_MGR", "connectObd: repository = null")
+
+                if (!transport.state.value.isBluetoothReady) {
+                    FileLogger.w(
+                        "OBD_MGR",
+                        "ЭТАП 2 невозможен — транспорт не подключён (state=${transport.state.value})",
+                    )
                     return@withContext false
                 }
 
-                if (!t.state.value.isBluetoothReady) {
-                    FileLogger.w("OBD_MGR", "ЭТАП 2 невозможен — Bluetooth не подключён (state=${t.state.value})")
-                    return@withContext false
-                }
-
-                val mac = t.connectedMac
-                if (mac.isNullOrBlank()) {
-                    FileLogger.w("OBD_MGR", "ЭТАП 2 невозможен — MAC неизвестен")
+                val target = transport.connectedTarget
+                if (target.isNullOrBlank()) {
+                    FileLogger.w("OBD_MGR", "ЭТАП 2 невозможен — target неизвестен")
                     return@withContext false
                 }
 
                 // [FIX 1] skipReset вычисляется ДО setObdState(ObdInitializing).
-                val skipReset = t.state.value is ConnState.ObdConnected
-                FileLogger.i("OBD_MGR", "ЭТАП 2 — инициализация OBD (mac=$mac, skipReset=$skipReset)")
-                t.setObdState(ConnState.ObdInitializing)
+                val skipReset = transport.state.value is ConnState.ObdConnected
+                FileLogger.i("OBD_MGR", "ЭТАП 2 — инициализация OBD (target=$target, skipReset=$skipReset)")
 
+                transport.setObdState(ConnState.ObdInitializing)
                 delay(1500)
 
                 FileLogger.i("OBD_MGR", "initializeObd(skipReset=$skipReset)")
-                val result = c.initializeObd(skipReset = skipReset)
+                val result = client.initializeObd(skipReset = skipReset)
                 FileLogger.i("OBD_MGR", "initializeObd result=$result")
+
                 when (result) {
                     is Elm327Client.ObdInitResult.Success -> {
-                        t.setObdState(ConnState.ObdConnected("ELM327", mac, result.protocol))
+                        transport.setObdState(
+                            ConnState.ObdConnected(
+                                deviceName = "ELM327",
+                                mac = target,
+                                protocol = result.protocol,
+                            ),
+                        )
 
                         // [FIX DETECT] Загружаем supportedPids из SettingsStore.
-                        //   Если есть — используем, detect() НЕ вызываем.
-                        //   Если нет — запускаем detect() В ФОНЕ, чтобы не блокировать UI.
                         if (_supportedPids.value.isEmpty()) {
                             val saved = settings.settings.first().supportedPids
                             if (saved.isNotEmpty()) {
@@ -208,35 +229,36 @@ class ObdManager(
                                 }.toSet()
                                 if (pids.isNotEmpty()) {
                                     _supportedPids.value = pids
-                                    repo.setSupportedPids(pids)
+                                    repository.setSupportedPids(pids)
                                     FileLogger.i("OBD_MGR", "supportedPids из SettingsStore: ${pids.size}")
                                 }
                             }
 
                             if (_supportedPids.value.isEmpty()) {
-                                // Нет сохранённых — detect() в фоне.
-                                startDetectInBackground(c, repo)
+                                startDetectInBackground(repository)
                             }
                         } else {
                             FileLogger.d("OBD_MGR", "supportedPids уже в памяти (${_supportedPids.value.size})")
                         }
 
-                        // [FIX DETECT] Polling запускается СРАЗУ — приборная панель
-                        //              и customPids работают, пока detect() идёт в фоне.
                         if (startPollingAfter) {
                             FileLogger.i("OBD_MGR", "startPolling(intervalMs=$intervalMs)")
-                            repo.startPolling(intervalMs)
+                            repository.startPolling(intervalMs)
                         }
 
-                        FileLogger.i("OBD_MGR", "ЭТАП 2 завершён. Протокол: ${result.protocol}, поддерживаемых PID: ${_supportedPids.value.size}")
+                        FileLogger.i(
+                            "OBD_MGR",
+                            "ЭТАП 2 завершён. Протокол: ${result.protocol}, поддерживаемых PID: ${_supportedPids.value.size}",
+                        )
                         true
                     }
+
                     is Elm327Client.ObdInitResult.Error -> {
-                        val currentState = t.state.value
+                        val currentState = transport.state.value
                         if (currentState is ConnState.Disconnected) {
                             FileLogger.w("OBD_MGR", "ЭТАП 2 — сокет мёртв")
                         } else {
-                            t.setObdState(ConnState.ObdError(mac, result.message))
+                            transport.setObdState(ConnState.ObdError(target, result.message))
                             FileLogger.e("OBD_MGR", "ЭТАП 2 — ошибка: ${result.message}")
                         }
                         false
@@ -249,10 +271,10 @@ class ObdManager(
         }
 
     // ============================================================
-    //  detect() в фоне
+    // detect() в фоне
     // ============================================================
 
-    private fun startDetectInBackground(c: Elm327Client, repo: ObdRepository) {
+    private fun startDetectInBackground(repo: ObdRepository) {
         if (detectInProgress) {
             FileLogger.d("OBD_MGR", "detect() уже идёт, пропускаю")
             return
@@ -261,13 +283,12 @@ class ObdManager(
         scope.launch {
             try {
                 FileLogger.i("OBD_MGR", "detect() в фоне — start")
-                val detector = SupportedPidsDetector(c)
+                val detector = SupportedPidsDetector(client)
                 val supported = detector.detect()
                 _supportedPids.value = supported
                 repo.setSupportedPids(supported)
                 FileLogger.i("OBD_MGR", "detect() в фоне — готово: ${supported.size}")
 
-                // Сохраняем в SettingsStore для следующих подключений.
                 settings.setSupportedPids(supported.map { it.cmd }.toSet())
                 FileLogger.i("OBD_MGR", "supportedPids сохранены в SettingsStore")
             } catch (e: Exception) {
@@ -280,10 +301,8 @@ class ObdManager(
 
     /** Ручной запуск detect() — по кнопке в настройках. */
     fun redetectSupportedPids() {
-        val c = client ?: return
-        val repo = repository ?: return
         FileLogger.i("OBD_MGR", "redetectSupportedPids() по запросу")
-        startDetectInBackground(c, repo)
+        startDetectInBackground(repository)
     }
 
     // ============================================================
@@ -291,7 +310,7 @@ class ObdManager(
     // ============================================================
 
     private suspend fun retryObdInternal() {
-        FileLogger.i("OBD_MGR", "retryObdInternal start, state=${transport?.state?.value}")
+        FileLogger.i("OBD_MGR", "retryObdInternal start, state=${transport.state.value}")
 
         // [FIX RACE] Если connectObd уже идёт — не мешаем.
         if (connectInProgress.get()) {
@@ -299,11 +318,12 @@ class ObdManager(
             return
         }
 
-        val state = transport?.state?.value
+        val state = transport.state.value
         if (state !is ConnState.BtConnected
             && state !is ConnState.ObdConnected
             && state !is ConnState.ObdError
-            && state !is ConnState.ObdInitializing) {
+            && state !is ConnState.ObdInitializing
+        ) {
             FileLogger.w("OBD_MGR", "retry невозможен, сокет мёртв (state=$state)")
             return
         }
@@ -321,13 +341,12 @@ class ObdManager(
         }
 
         FileLogger.i("OBD_MGR", "retry: stopPollingAndJoin")
-        repository?.stopPollingAndJoin()
+        repository.stopPollingAndJoin()
 
         FileLogger.i("OBD_MGR", "retry: delay ${silenceRetryDelayMs} мс")
         delay(silenceRetryDelayMs)
 
-        // [FIX RACE] Ещё раз проверяем, не начал ли кто-то другой connectObd,
-        // пока мы ждали в delay.
+        // [FIX RACE] Ещё раз проверяем, не начал ли кто-то другой connectObd.
         if (connectInProgress.get()) {
             FileLogger.w("OBD_MGR", "retry: connectObd уже идёт, пропускаю")
             return
@@ -336,14 +355,16 @@ class ObdManager(
         FileLogger.i("OBD_MGR", "retry: connectObd(startPollingAfter=false)")
         val ok = connectObd(startPollingAfter = false)
         FileLogger.i("OBD_MGR", "retry: connectObd=$ok")
+
         if (ok) {
             silenceRetryDelayMs = 5000L
             FileLogger.i("OBD_MGR", "retry: startPolling($intervalMs)")
-            repository?.startPolling(intervalMs)
+            repository.startPolling(intervalMs)
         } else {
             silenceRetryDelayMs = (silenceRetryDelayMs * 2).coerceAtMost(30_000L)
             FileLogger.w("OBD_MGR", "retry: connectObd failed, следующий delay=${silenceRetryDelayMs}")
         }
+
         FileLogger.i("OBD_MGR", "retry завершён: $ok (следующая задержка: ${silenceRetryDelayMs} мс)")
     }
 
@@ -353,12 +374,12 @@ class ObdManager(
 
     fun startAutoReconnect(
         autoConnectProvider: suspend () -> Boolean,
-        lastMacProvider: suspend () -> String?
+        lastTargetProvider: suspend () -> String?,
     ) {
-        FileLogger.i("OBD_MGR", "startAutoReconnect")
+        FileLogger.i("OBD_MGR", "startAutoReconnect (${transportKind})")
         autoReconnectJob?.cancel()
         autoReconnectJob = scope.launch {
-            transport?.state?.collect { state ->
+            transport.state.collect { state ->
                 if (userDisconnected) return@collect
 
                 if (retryInProgress) {
@@ -378,15 +399,15 @@ class ObdManager(
                     else -> false
                 }
                 if (shouldReconnect && autoConnectProvider()) {
-                    val mac = lastMacProvider() ?: return@collect
-                    FileLogger.w("AUTO", "связь потеряна, пробую восстановить к $mac")
-                    tryReconnect(mac)
+                    val target = lastTargetProvider() ?: return@collect
+                    FileLogger.w("AUTO", "связь потеряна, пробую восстановить к $target")
+                    tryReconnect(target)
                 }
             }
         }
     }
 
-    private suspend fun tryReconnect(mac: String) {
+    private suspend fun tryReconnect(target: String) {
         var delayMs = 1000L
         repeat(5) { attempt ->
             delay(delayMs)
@@ -398,14 +419,14 @@ class ObdManager(
                 return@repeat
             }
 
-            val state = transport?.state?.value
+            val state = transport.state.value
             val socketDead = state is ConnState.Disconnected
 
             FileLogger.i("AUTO", "попытка ${attempt + 1}/5 через ${delayMs} мс (socketDead=$socketDead)")
 
             if (socketDead) {
                 _supportedPids.value = emptySet()
-                if (connectBluetooth(mac) && connectObd()) {
+                if (transport.connect(target) && connectObd()) {
                     FileLogger.i("AUTO", "восстановлено (полное)")
                     return
                 }
@@ -432,17 +453,17 @@ class ObdManager(
 
     suspend fun readVehicleInfo(): VehicleInfo? {
         FileLogger.i("OBD_MGR", "readVehicleInfo()")
-        return client?.readVehicleInfo()
+        return client.readVehicleInfo()
     }
 
     suspend fun readDtcs(): List<String> {
         FileLogger.i("OBD_MGR", "readDtcs()")
-        return repository?.readDtcs() ?: emptyList()
+        return repository.readDtcs()
     }
 
     suspend fun clearDtcs(): Boolean {
         FileLogger.i("OBD_MGR", "clearDtcs()")
-        return repository?.clearDtcs() ?: false
+        return repository.clearDtcs()
     }
 
     // ============================================================
@@ -454,34 +475,33 @@ class ObdManager(
         userDisconnected = true
         autoReconnectJob?.cancel()
         autoReconnectJob = null
-        repository?.stopPolling()
-        scope.launch { client?.disconnect() }
+        repository.stopPolling()
+        scope.launch { transport.disconnect() }
     }
 
     fun reconnectAfterUserAction() {
         FileLogger.i("OBD_MGR", "reconnectAfterUserAction()")
         userDisconnected = false
         silenceRetryDelayMs = 5000L
-        repository?.resetRetry()
+        repository.resetRetry()
     }
 
     fun setCustomPids(pids: Set<Pid>) {
         FileLogger.i("OBD_MGR", "setCustomPids(${pids.map { it.cmd }})")
-        repository?.setCustomPids(pids)
+        repository.setCustomPids(pids)
     }
 
     fun resetRetry() {
         FileLogger.i("OBD_MGR", "resetRetry()")
-        repository?.resetRetry()
+        repository.resetRetry()
     }
 
     fun setPollingInterval(ms: Long) {
         FileLogger.i("OBD_MGR", "setPollingInterval($ms)")
         intervalMs = ms
-        val repo = repository ?: return
-        if (repo.isPolling()) {
-            repo.stopPolling()
-            repo.startPolling(ms)
+        if (repository.isPolling()) {
+            repository.stopPolling()
+            repository.startPolling(ms)
         }
     }
 }
